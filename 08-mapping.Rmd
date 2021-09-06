@@ -26,12 +26,16 @@ library(ggplot2) # tidyverse data visualization package
 
 A satisfying and important aspect of geographic research is communicating the results.
 Map making --- the art of cartography --- is an ancient skill that involves communication, intuition, and an element of creativity.
-Static mapping is straightforward with `plot()`, as we saw in Section \@ref(basic-map).
-It is possible to create advanced maps using base R methods [@murrell_r_2016], but this chapter focuses on dedicated map-making packages.
+Static mapping in R is straightforward with the `plot()` function, as we saw in Section \@ref(basic-map).
+It is possible to create advanced maps using base R methods [@murrell_r_2016].
+The focus of this chapter, however, is cartography with dedicated map-making packages.
 When learning a new skill, it makes sense to gain depth-of-knowledge in one area before branching out.
 Map making is no exception, hence this chapter's coverage of one package (**tmap**) in depth rather than many superficially.
+
 In addition to being fun and creative, cartography also has important practical applications.
-A carefully crafted map is vital for effectively communicating the results of your work [@brewer_designing_2015]:
+A carefully crafted map can be the best way of communicating the results of your work, but poorly designed maps can leave a bad impression.
+Common design issues include poor placement, size and readability of text and careless selection of colors, as outlined in the style [guide](https://www.tandf.co.uk//journals/authors/style/TJOM-suppmaterial-quick-guide.pdf) of the Journal of Maps.
+Furthermore, poor map making can hinder the communication of results [@brewer_designing_2015]:
 
 > Amateur-looking maps can undermine your audience’s ability to understand important information and weaken the presentation of a professional data investigation.
 
@@ -91,7 +95,7 @@ tm_shape(nz) +
 ```
 
 ```{r tmshape, echo=FALSE, message=FALSE, fig.cap="New Zealand's shape plotted with fill (left), border (middle) and fill and border (right) layers added using tmap functions.", fig.scap="New Zealand's shape plotted using tmap functions."}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-tmshape.R", print.eval = TRUE)
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-tmshape.R", print.eval = TRUE)
 ```
 
 The object passed to `tm_shape()` in this case is `nz`, an `sf` object representing the regions of New Zealand (see Section \@ref(intro-sf) for more on `sf` objects).
@@ -247,7 +251,7 @@ tm_shape(nz) + tm_polygons(col = "Median_income", palette = "BuGn")
 ```
 
 ```{r tmpal, message=FALSE, fig.cap="Illustration of settings that affect color settings. The results show (from left to right): default settings, manual breaks, n breaks, and the impact of changing the palette.", fig.scap="Illustration of settings that affect color settings.", echo=FALSE, fig.asp=0.56}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-tmpal.R", print.eval = TRUE)
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-tmpal.R", print.eval = TRUE)
 ```
 
 Another way to change color settings is by altering color break (or bin) settings.
@@ -263,7 +267,7 @@ Here are six of the most useful break styles:
 - `style = "cat"` was designed to represent categorical values and assures that each category receives a unique color.
 
 ```{r break-styles, message=FALSE, fig.cap="Illustration of different binning methods set using the style argument in tmap.", , fig.scap="Illustration of different binning methods using tmap.", echo=FALSE}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-break-styles.R", print.eval = TRUE)
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-break-styles.R", print.eval = TRUE)
 ```
 
 ```{block2 break-style-note, type='rmdnote'}
@@ -352,7 +356,7 @@ map_nz + tm_layout(frame = FALSE)
 ```
 
 ```{r layout1, message=FALSE, fig.cap="Layout options specified by (from left to right) title, scale, bg.color and frame arguments.", fig.scap="Layout options specified by the tmap arguments.", echo=FALSE, fig.asp=0.56}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-layout1.R", print.eval = TRUE)
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-layout1.R", print.eval = TRUE)
 ```
 
 The other arguments in `tm_layout()` provide control over many more aspects of the map in relation to the canvas on which it is placed.
@@ -367,13 +371,13 @@ Here are some useful layout settings (some of which are illustrated in Figure \@
 
 ```{r layout2, message=FALSE, fig.cap="Illustration of selected layout options.", echo=FALSE, fig.asp=0.56}
 # todo: add more useful settings to this plot
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-layout2.R", print.eval = TRUE)
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-layout2.R", print.eval = TRUE)
 ```
 
 The impact of changing the color settings listed above is illustrated in Figure \@ref(fig:layout3) (see `?tm_layout` for a full list).
 
 ```{r layout3, message=FALSE, fig.cap="Illustration of selected color-related layout options.", echo=FALSE, fig.asp=0.56}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-layout3.R", print.eval = TRUE)
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-layout3.R", print.eval = TRUE)
 ```
 
 \index{tmap (package)!styles}
@@ -388,7 +392,7 @@ map_nza + tm_style("col_blind")
 ```
 
 ```{r tmstyles, message=FALSE, fig.cap="Selected tmap styles.", fig.scap="Selected tmap styles.", echo=FALSE, fig.asp=0.56}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-tmstyles.R", print.eval = TRUE)
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-tmstyles.R", print.eval = TRUE)
 ```
 
 ```{block2 styles, type='rmdnote'}
@@ -411,8 +415,6 @@ However, this risks cluttering the map because it will involve multiple overlapp
 Typically all individual facets in a faceted map contain the same geometry data repeated multiple times, once for each column in the attribute data (this is the default plotting method for `sf` objects, see Chapter \@ref(spatial-class)).
 However, facets can also represent shifting geometries such as the evolution of a point pattern over time.
 This use case of faceted plot is illustrated in Figure \@ref(fig:urban-facet).
-
-<!-- todo: describe data type (long) and nrow vs ncol -->
 
 ```{r urban-facet, message=FALSE, fig.cap="Faceted map showing the top 30 largest urban agglomerations from 1970 to 2030 based on population projections by the United Nations.", fig.scap="Faceted map showing urban agglomerations.", fig.asp=0.5}
 urb_1970_2030 = urban_agglomerations %>% 
@@ -540,7 +542,7 @@ if (knitr::is_latex_output()){
 ```
 
 ```{r 08-mapping-21, echo=FALSE, eval=FALSE}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-urban-animation.R")
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-urban-animation.R")
 ```
 
 The animated map illustrated in Figure \@ref(fig:urban-animated) can be created using the same **tmap** techniques that generate faceted maps, demonstrated in Section \@ref(faceted-maps).
@@ -570,8 +572,8 @@ This shows the development of states in the United States, which first formed in
 Code to reproduce this map can be found in the script `08-usboundaries.R`.
 
 ```{r 08-mapping-24, echo=FALSE, eval=FALSE}
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-usboundaries.R")
-source("https://github.com/Robinlovelace/geocompr/raw/master/code/08-uscolonize.R")
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-usboundaries.R")
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/08-uscolonize.R")
 ```
 
 ```{r animus, echo=FALSE, message=FALSE, fig.cap="Animated map showing population growth, state formation and boundary changes in the United States, 1790-2010. Animated version available online at geocompr.robinlovelace.net.", fig.scap="Animated map showing boundary changes in the United States."}
@@ -829,7 +831,7 @@ This section gives some context, teaches the basics of **shiny** from a web mapp
 The way **shiny** works is well documented at [shiny.rstudio.com](https://shiny.rstudio.com/).
 The two key elements of a **shiny** app reflect the duality common to most web application development: 'front end' (the bit the user sees) and 'back end' code.
 In **shiny** apps, these elements are typically created in objects named `ui` and `server` within an R script named `app.R`, which lives in an 'app folder'.
-This allows web mapping applications to be represented in a single file, such as the [`coffeeApp/app.R`](https://github.com/Robinlovelace/geocompr/blob/master/coffeeApp/app.R) file in the book's GitHub repo.
+This allows web mapping applications to be represented in a single file, such as the [`coffeeApp/app.R`](https://github.com/Robinlovelace/geocompr/blob/main/apps/coffeeApp/app.R) file in the book's GitHub repo.
 
 ```{block2 shiny, type = 'rmdnote'}
 In **shiny** apps these are often split into `ui.R` (short for user interface) and `server.R` files, naming conventions used by `shiny-server`, a server-side Linux application for serving shiny apps on public-facing websites.
@@ -875,7 +877,7 @@ The function `shinyApp()` combines both the `ui` and `server` elements and serve
 When you move the slider in the map shown in Figure \@ref(fig:lifeApp), you are actually causing R code to re-run, although this is hidden from view in the user interface.
 
 Building on this basic example and knowing where to find help (see `?shiny`), the best way forward now may be to stop reading and start programming!
-The recommended next step is to open the previously mentioned [`CycleHireApp/app.R`](https://github.com/Robinlovelace/geocompr/blob/master/CycleHireApp/app.R) script in an IDE of choice, modify it and re-run it repeatedly.
+The recommended next step is to open the previously mentioned [`CycleHireApp/app.R`](https://github.com/Robinlovelace/geocompr/blob/main/apps/CycleHireApp/app.R) script in an IDE of choice, modify it and re-run it repeatedly.
 The example contains some of the components of a web mapping application implemented in **shiny** and should 'shine' a light on how they behave.
 
 The `CycleHireApp/app.R` script contains **shiny** functions that go beyond those demonstrated in the simple 'lifeApp' example.
@@ -963,7 +965,6 @@ The `geom_sf()` function is not always able to create a desired legend to use fr
 Raster objects are also not natively supported in **ggplot2** and need to be converted into a data frame before plotting.
 
 We have covered mapping with **sf**, **raster** and **ggplot2** packages first because these packages are highly flexible, allowing for the creation of a wide range of static maps.
-<!-- Many other static mapping packages are more specific. -->
 Before we cover mapping packages for plotting a specific type of map (in the next paragraph), it is worth considering alternatives to the packages already covered for general-purpose mapping (Table \@ref(tab:map-gpkg)).
 
 ```{r map-gpkg, echo=FALSE, message=FALSE, warning=FALSE}

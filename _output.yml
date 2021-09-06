@@ -1,5 +1,20 @@
+bookdown::bs4_book:
+  theme:
+    primary: "#3860b6" #links  
+    base_font: 
+      google: 
+        family: Lato
+    heading_font:
+      google:
+        family: Montserrat
+        wght: 600
+    code_font:
+      google: 
+        family: Roboto Mono
+    bg: "#fefefe" #backgrounds
+    fg: "#000000" #fonts
 bookdown::gitbook:
-  css: css/style.css
+  css: style/style.css
   config:
     toc:
       collapse: section
@@ -10,12 +25,11 @@ bookdown::gitbook:
         <li><a href="https://nowosad.github.io/">Jakub Nowosad</a></li>
         <li><a href="https://github.com/jannes-m/">Jannes Muenchow</a></li>
     edit:
-      link: https://github.com/Robinlovelace/geocompr/edit/master/%s
+      link: https://github.com/Robinlovelace/geocompr/edit/main/%s
       text: "Edit"
     sharing: null
   includes:
-    in_header: ga.html
-    after_body: after-body.html
+    in_header: style/ga.html
+    after_body: style/after-body.html
 bookdown::html_chapters:
-  css: [css/style.css, css/toc.css]
-
+  css: [style/style.css, style/toc.css]
