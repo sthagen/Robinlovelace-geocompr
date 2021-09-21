@@ -73,6 +73,10 @@ These can be installed with the following command (which requires [**remotes**](
 
 ```{r index-3, message=FALSE, eval=FALSE, echo=is_html, results='hide'}
 remotes::install_github("geocompr/geocompkg")
+remotes::install_github("rspatial/terra")
+remotes::install_github("mtennekes/tmap")
+remotes::install_github("nowosad/spData")
+remotes::install_github("nowosad/spDataLarge")
 ```
 
 ```{r index-3-2, echo=FALSE}
@@ -132,7 +136,7 @@ Further details can be found at [github.com/Robinlovelace/geocompr](https://gith
 \begin{center} \Large \emph{F{\"u}r meine Katharina und alle unsere Kinder  } \end{center}
 ```
 
-# Foreword {-}
+# Foreword (1st Edition) {-}
 
 Doing 'spatial' in R has always been about being broad, seeking to provide and integrate tools from geography, geoinformatics, geocomputation and spatial statistics for anyone interested in joining in: joining in asking interesting questions, contributing fruitful research questions, and writing and improving code.
 That is, doing 'spatial' in R has always included open source code, open data and reproducibility.

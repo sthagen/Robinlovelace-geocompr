@@ -229,9 +229,12 @@ The package **sf**\index{sf} (covered in Chapter \@ref(spatial-class)), for exam
 
 A surge in development time (and interest) in 'R-spatial\index{R-spatial}' has followed the award of a grant by the R Consortium for the development of support for Simple Features, an open-source standard and model to store and access vector geometries. 
 This resulted in the **sf** package (covered in Section \@ref(intro-sf)).
-Multiple places reflect the immense interest in **sf**. This is especially true for the [R-sig-Geo Archives](https://stat.ethz.ch/pipermail/r-sig-geo/), a long-standing open access email list containing much R-spatial wisdom accumulated over the years.
+Multiple places reflect the immense interest in **sf**. 
+This is especially true for the [R-sig-Geo Archives](https://stat.ethz.ch/pipermail/r-sig-geo/), a long-standing open access email list containing much R-spatial wisdom accumulated over the years.
 
-```{r cranlogs, fig.cap="The popularity of spatial packages in R. The y-axis shows average number of downloads per day, within a 30-day rolling window, of prominent spatial packages.", echo=FALSE, fig.scap="The popularity of spatial packages in R."}
+<!--jn:toDo-->
+<!-- consider updating this figure -->
+```{r cranlogs, fig.cap="Downloads of selected R packages for working with geographic data. The y-axis shows average number of downloads per day, within a 30-day rolling window.", echo=FALSE, fig.scap="The popularity of spatial packages in R."}
 knitr::include_graphics("figures/spatial-package-growth.png")
 ```
 
@@ -242,6 +245,8 @@ This has led to a demand for 'tidy geographic data' which has been partly met by
 An obvious feature of the **tidyverse** is the tendency for packages to work in harmony.
 There is no equivalent **geoverse**, but there are attempts at harmonization between packages hosted in the [r-spatial](https://github.com/r-spatial/discuss/issues/11) organization and a growing number of packages use **sf**\index{sf} (Table \@ref(tab:revdep)). 
 
+<!--jn:toDo-->
+<!-- consider updating this table -->
 ```{r revdep, echo=FALSE, message=FALSE}
 top_dls = readr::read_csv("extdata/top_dls.csv")
 knitr::kable(top_dls[1:5, 1:2], digits = 0, 
@@ -256,6 +261,9 @@ knitr::kable(top_dls[1:5, 1:2], digits = 0,
 ```
 
 ## The history of R-spatial
+
+<!--jn:toDo-->
+<!--update the history-->
 
 There are many benefits of using recent spatial packages such as **sf**, but it also important to be aware of the history of R's spatial capabilities: many functions, use-cases and teaching material are contained in older packages.
 These can still be useful today, provided you know where to look.
@@ -331,11 +339,17 @@ While this works well for points it is computationally inefficient for lines and
 Although geographic visualization tended to focus on vector data, raster visualization is supported in **raster** and received a boost with the release of **rasterVis**, which is described in a book on the subject of spatial and temporal data visualization [@lamigueiro_displaying_2018].
 As of 2018 map making in R is a hot topic with dedicated packages such as **tmap**, **leaflet** and **mapview** all supporting the class system provided by **sf**, the focus of the next chapter (see Chapter \@ref(adv-map) for more on visualization).
 
+<!--jn:toDo-->
+<!-- add rayshader + ggspatial to the above viz list -->
+<!--add stars and gdalcubes, rgee-->
+<!-- add terra -->
+<!-- qgisprocess  -->
+<!-- add info about specialized packages - sfnetworks, landscapemetrics, etc. -->
+
 ## Exercises
 
-1. Think about the terms 'GIS'\index{GIS}, 'GDS' and 'geocomputation' described above. Which (if any) best describes the work you would like to do using geo* methods and software and why?
-
-1. Provide three reasons for using a scriptable language such as R for geocomputation instead of using an established GIS program such as QGIS\index{QGIS}.
-
-1. Name two advantages and two disadvantages of using mature vs recent packages for geographic data analysis\index{geographic data analysis} (for example **sp** vs **sf**\index{sf}).
-
+```{r, echo=FALSE, results='asis'}
+res = knitr::knit_child('_01-ex.Rmd', quiet = TRUE, 
+                        options = list(include = FALSE, eval = FALSE))
+cat(res, sep = '\n')
+```
