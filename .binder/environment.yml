@@ -1,0 +1,33 @@
+name: geocompr
+channels:
+  - conda-forge
+  - bioconda
+  - r
+dependencies:
+  - r-base
+  - r-sf
+  - r-bookdown
+  - r-classInt
+  - r-dplyr
+  - r-ggplot2
+  - r-htmlwidgets
+  - r-kableExtra
+  - r-igraph
+  - r-leaflet
+  - r-lwgeom
+  - r-purrr
+  - r-raster
+  - r-rasterVis
+  - r-readr
+  - r-s2
+  - r-spData
+  - r-stars
+  - r-stringr
+  - r-tibble
+  - r-tidyr
+  - r-tmap
+  - r-foreign
+  - r-sfheaders
+  - r-shiny
+  - r-rcppeigen
+  - r-v8
