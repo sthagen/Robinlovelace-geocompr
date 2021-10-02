@@ -122,7 +122,7 @@ Note: the solution involving `sgbp` objects is more generalisable though, as it 
 
 It should be noted that a logical  can also be used with `filter()` as follows (`sparse = FALSE` is explained in Section \@ref(topological-relations)):
 
-````{r}
+```{r 04-spatial-operations-7b}
 canterbury_height3 = nz_height %>%
   filter(st_intersects(x = ., y = canterbury, sparse = FALSE))
 ```
@@ -517,7 +517,7 @@ The previous chapter (Section \@ref(manipulating-raster-objects)) demonstrated h
 Raster objects can also be extracted by location (coordinates) and other spatial objects.
 To use coordinates for subsetting, one can 'translate' the coordinates into a cell ID with the **terra** function `cellFromXY()`.
 An alternative is to use `terra::extract()` (be careful, there is also a function called `extract()` in the **tidyverse**\index{tidyverse (package)}) to extract values.
-Both methods are demonstrated below to find the value of the cell that covers a point located 0.1 units from the origin.
+Both methods are demonstrated below to find the value of the cell that covers a point located at coordinates of 0.1, 0.1.
 \index{raster!subsetting}
 \index{spatial!subsetting}
 
@@ -529,9 +529,9 @@ terra::extract(elev, matrix(c(0.1, 0.1), ncol = 2))
 ```
 
 <!--jn:toDo-->
-<!-- to update -->
+<!-- to update? -->
 <!-- It is convenient that both functions also accept objects of class `Spatial* Objects`. -->
-Raster objects can also be subset with another raster object, as illustrated in Figure \@ref(fig:raster-subset) (left panel) and demonstrated in the code chunk below:
+Raster objects can also be subset with another raster object, as demonstrated in the code chunk below:
 
 ```{r 04-spatial-operations-35}
 clip = rast(xmin = 0.9, xmax = 1.8, ymin = -0.45, ymax = 0.45,
@@ -543,13 +543,13 @@ elev[clip]
 
 Basically, this amounts to retrieving the values of the first raster (here: `elev`) falling within the extent of a second raster (here: `clip`).
 
-```{r raster-subset, echo = FALSE, fig.cap = "Subsetting raster values with the help of another raster (left). Raster mask (middle). Output of masking a raster (right).", fig.scap="Subsetting raster values."}
+```{r raster-subset, echo = FALSE, fig.cap = "Original raster (left). Raster mask (middle). Output of masking a raster (right).", fig.scap="Subsetting raster values."}
 knitr::include_graphics("figures/04_raster_subset.png")
 ```
 
 So far, the subsetting returned the values of specific cells, however, when doing spatial subsetting, one often also expects a spatial object as an output.
 To do this, we can use again the `[` when we additionally set the `drop` parameter to `FALSE`.
-To illustrate this, we retrieve the first two cells of `elev` as an individual raster object. 
+Let's illustrate this by retrieving the first two cells of `elev` as an individual raster object. 
 As mentioned in Section \@ref(manipulating-raster-objects), the `[` operator accepts various inputs to subset rasters and returns a raster object when `drop = FALSE`.
 The code chunk below subsets the `elev` raster by cell ID and row-column index with identical results: the first two cells on the top row (only the first 2 lines of the output is shown):
 
@@ -567,33 +567,31 @@ x = elev[1, 1:2, drop = FALSE]
 plot(x)
 ```
 
-Another common use case of spatial subsetting is when a raster with `logical` (or `NA`) values is used to mask another raster with the same extent and resolution, as illustrated in Figure \@ref(fig:raster-subset), middle and right panel.
+Another common use case of spatial subsetting is when a raster with `logical` (or `NA`) values is used to mask another raster with the same extent and resolution, as illustrated in Figure \@ref(fig:raster-subset).
 In this case, the `[` and `mask()` functions can be used (results not shown):
 
 ```{r 04-spatial-operations-38, eval=FALSE}
 # create raster mask
 rmask = elev
 values(rmask) = sample(c(NA, TRUE), 36, replace = TRUE)
-
-# spatial subsetting
-elev[rmask, drop = FALSE]           # with [ operator
-mask(elev, rmask)                   # with mask()
-```
-
-```{r 04-spatial-operations-39, eval=FALSE, echo=FALSE}
-# aim: expand on previous code chunk to show how mask methods differ
-rmask = elev # create raster mask
-values(rmask) = sample(c(NA, TRUE), 36, replace = TRUE)
-
-m1 = elev[rmask, drop = FALSE]           # with [ operator
-m2 = mask(elev, rmask)                   # with mask()
-
-all.equal(m1, m2)
 ```
 
 In the code chunk above, we have created a mask object called `rmask` with values randomly assigned to `NA` and `TRUE`.
 Next, we want to keep those values of `elev` which are `TRUE` in `rmask`.
 In other words, we want to mask `elev` with `rmask`.
+
+```{r 04-spatial-operations-38b, eval=FALSE}
+# spatial subsetting
+elev[rmask, drop = FALSE]           # with [ operator
+mask(elev, rmask)                   # with mask()
+```
+
+The above approach can be also used to replace some values (e.g., expected to be wrong) with NA. 
+
+```{r 04-spatial-operations-38c, eval=FALSE}
+elev[elev < 20] = NA
+```
+
 These operations are in fact Boolean local operations since we compare cell-wise two rasters.
 The next subsection explores these and related operations in more detail.
 
@@ -603,7 +601,7 @@ The next subsection explores these and related operations in more detail.
 Map algebra makes raster processing really fast.
 This is because raster datasets only implicitly store coordinates.
 To derive the coordinate of a specific cell, we have to calculate it using its matrix position and the raster resolution and origin.
-For the processing, however, the geographic position of a cell is barely relevant as long as we make sure that the cell position is still the same after the processing (one-to-one locational correspondence).
+For the processing, however, the geographic position of a cell is barely relevant as long as we make sure that the cell position is still the same after the processing.
 Additionally, if two or more raster datasets share the same extent, projection and resolution, one could treat them as matrices for the processing.
 This is exactly what map algebra is doing in R.
 First, the **terra** package checks the headers of the rasters on which to perform any algebraic operation, and only if they are correspondent to each other, the processing goes on.
@@ -618,15 +616,30 @@ Most often the output cell value is the result of a 3 x 3 input cell block.
 3. *Zonal* operations are similar to focal operations, but the surrounding pixel grid on which new values are computed can have irregular sizes and shapes.
 4. *Global* or per-raster operations; that means the output cell derives its value potentially from one or several entire rasters.
 
-This typology classifies map algebra operations by the number/shape of cells used for each pixel processing step.
-For the sake of completeness, we should mention that raster operations can also be classified by discipline such as terrain, hydrological analysis or image classification.
+This typology classifies map algebra operations by the number of cells used for each pixel processing step and the type of the output.
+For the sake of completeness, we should mention that raster operations can also be classified by discipline such as terrain, hydrological analysis, or image classification.
 The following sections explain how each type of map algebra operations can be used, with reference to worked examples.
 
 ### Local operations
 
 \index{map algebra!local operations}
 **Local** operations comprise all cell-by-cell operations in one or several layers.
-A good example is the classification of intervals of numeric values into groups such as grouping a digital elevation model into low (class 1), middle (class 2) and high elevations (class 3).
+Raster algebra is a classical use case of local operations -- this includes adding or subtracting values from a raster, squaring and multipling rasters.
+Raster algebra also allows logical operations such as finding all raster cells that are greater than a specific value (5 in our example below).
+The **terra** package supports all these operations and more, as demonstrated below (Figure \@ref(fig:04-local-operations)):
+
+```{r 04-spatial-operations-41, eval = FALSE}
+elev + elev
+elev^2
+log(elev)
+elev > 5
+```
+
+```{r 04-local-operations, echo=FALSE, fig.cap="Examples of different local operations of the elev raster object: adding two rasters, squaring, applying logarithmic transformation, and performing a logical operation."}
+knitr::include_graphics("figures/04-local-operations.png")
+```
+
+Another good example of local operations is the classification of intervals of numeric values into groups such as grouping a digital elevation model into low (class 1), middle (class 2) and high elevations (class 3).
 Using the `classify()` command, we need first to construct a reclassification matrix, where the first column corresponds to the lower and the second column to the upper end of the class.
 The third column represents the new value for the specified ranges in column one and two.
 
@@ -641,29 +654,15 @@ Here, we assign the raster values in the ranges 0--12, 12--24 and 24--36 are *re
 recl = classify(elev, rcl = rcl)
 ```
 
-We will perform several reclassifactions in Chapter \@ref(location).
+The `classify()` function can be also used when we want to reduce the number of classes in our categorical rasters.
+We will perform several additional reclassifications in Chapter \@ref(location).
 
-Raster algebra is another classical use case of local operations.
-This includes adding, subtracting and squaring two rasters.
-Raster algebra also allows logical operations such as finding all raster cells that are greater than a specific value (5 in our example below).
-The **terra** package supports all these operations and more, as demonstrated below (results not shown):
-
-<!--jn:toDo-->
-<!--consider describing the below examples-->
-<!--and maybe add a figure-->
-
-```{r 04-spatial-operations-41, eval = FALSE}
-elev + elev
-elev^2
-log(elev)
-elev > 5
-```
-
-<!--jn:toDo-->
-<!-- check if we are describing app and lapp somewhere -->
-Instead of arithmetic operators, one can also use the `app()` and `lapp()` functions.
-These functions are more efficient, hence, they are preferable in the presence of large raster datasets. 
-Additionally, they allow you to directly store an output file.
+Apart of arithmetic operators, one can also use the `app()`, `tapp()` and `lapp()` functions.
+They are more efficient, hence, they are preferable in the presence of large raster datasets. 
+Additionally, they allow you to save an output file directly.
+The `app()` function applies a function to each cell of a raster and is used to summarize (e.g., calculating the sum) the values of multiple layers into one layer.
+`tapp()` is an extension of `app()`, allowing us to select a subset of layers (see the `index` argument) for which we want to perform a certain operation.
+Finally, the `lapp()` function allows to apply a function to each cell using layers as arguments -- an application of `lapp()` is presented below.
 
 The calculation of the normalized difference vegetation index (NDVI) is a well-known local (pixel-by-pixel) raster operation.
 It returns a raster with values between -1 and 1; positive values indicate the presence of living plants (mostly > 0.2).
@@ -676,8 +675,24 @@ NDVI&= \frac{\text{NIR} - \text{Red}}{\text{NIR} + \text{Red}}\\
 \end{split}
 $$
 
-<!--jn:toDo-->
-<!--add NDVI example!!-->
+```{r}
+multi_raster_file = system.file("raster/landsat.tif", package = "spDataLarge")
+multi_rast = rast(multi_raster_file)
+```
+
+```{r}
+ndvi_fun = function(nir, red){
+  (nir - red) / (nir + red)
+}
+```
+
+```{r}
+ndvi_rast = lapp(multi_rast[[c(4, 3)]], fun = ndvi_fun)
+```
+
+```{r 04-ndvi, echo=FALSE, fig.cap=""}
+knitr::include_graphics("figures/04-ndvi.png")
+```
 
 Predictive mapping is another interesting application of local raster operations.
 The response variable corresponds to measured or observed points in space, for example, species richness, the presence of landslides, tree disease or crop yield.

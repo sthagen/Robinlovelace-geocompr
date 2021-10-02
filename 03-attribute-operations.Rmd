@@ -580,9 +580,10 @@ class(world_data)
 ```
 
 ## Manipulating raster objects
+<!--jn-->
 
 In contrast to the vector data model underlying simple features (which represents points, lines and polygons as discrete entities in space), raster data represent continuous surfaces.
-This section shows how raster objects work by creating them *from scratch*, building on Section \@ref(an-introduction-to-raster).
+This section shows how raster objects work by creating them *from scratch*, building on Section \@ref(an-introduction-to-terra).
 Because of their unique structure, subsetting and other operations on raster datasets work in a different way, as demonstrated in Section \@ref(raster-subsetting).
 \index{raster!manipulation}
 
@@ -601,57 +602,40 @@ Raster objects can also contain categorical values of class `logical` or `factor
 The following code creates a raster representing grain sizes (Figure \@ref(fig:cont-raster)):
 
 ```{r 03-attribute-operations-53, eval = FALSE}
+grain_order = c("clay", "silt", "sand")
 grain_char = sample(grain_order, 36, replace = TRUE)
-grain_fact = factor(grain_char, levels = c("clay", "silt", "sand"))
+grain_fact = factor(grain_char, levels = grain_order)
 grain = rast(nrows = 6, ncols = 6, resolution = 0.5, 
              xmin = -1.5, xmax = 1.5, ymin = -1.5, ymax = 1.5,
              vals = grain_fact)
 ```
 
-<!--jn:toDo-->
-<!-- update after spData update to read from files -->
 ```{r 03-attribute-operations-54, include = FALSE}
-library(spData)
-data("elev")
-elev = rast(elev)
-data("grain")
-grain = rast(grain)
+elev = rast(system.file("raster/elev.tif", package = "spData"))
+grain = rast(system.file("raster/grain.tif", package = "spData"))
 ```
 
-```{block2 03-attribute-operations-55, type='rmdnote'}
-`SpatRaster` objects can contain values of class `numeric`, `integer`, `logical` or `factor`, but not `character`.
-To use character values, they are first be converted into an appropriate class, for example using the function `factor()`. 
-The `levels` argument was used in the preceding code chunk to create an ordered factor:
-clay < silt < sand in terms of grain size.
-See the Data structures chapter of @wickham_advanced_2014 for further details on classes.
+The raster object stores the corresponding look-up table or "Raster Attribute Table" (RAT) as a list of data frames, which can be viewed with `cats(grain)` (see `?cats()` for more information).
+Each element of this list is a layer of the raster.
+It is also possible to use the function `levels()` for retrieving and adding new or replacing existing factor levels:
+
+```{r 03-attribute-operations-56}
+levels(grain)[[1]] = c(levels(grain)[[1]], wetness = c("wet", "moist", "dry"))
+levels(grain)
 ```
-
-<!--jn:toDo-->
-<!-- fix the next paragraph -->
-<!-- `SpatRaster` objects represent categorical variables as integers, so `grain[1, 1]` returns a number that represents a unique identifier, rather than "clay", "silt" or "sand".  -->
-<!-- The raster object stores the corresponding look-up table or "Raster Attribute Table" (RAT) as a data frame in a new slot named `attributes`, which can be viewed with `ratify(grain)` (see `?ratify()` for more information). -->
-<!-- Use the function `levels()` for retrieving and adding new factor levels to the attribute table: -->
-
-<!-- ```{r 03-attribute-operations-56} -->
-<!-- levels(grain)[[1]] = cbind(levels(grain)[[1]], wetness = c("wet", "moist", "dry")) -->
-<!-- levels(grain) -->
-<!-- ``` -->
-
-<!-- This behavior demonstrates that raster cells can only possess one value, an identifier which can be used to look up the attributes in the corresponding attribute table (stored in a slot named `attributes`). -->
-<!-- This is illustrated by the command below, which returns the grain size and wetness of cell IDs 1, 11 and 35: -->
-
-<!-- ```{r 03-attribute-operations-57} -->
-<!-- factorValues(grain, grain[c(1, 11, 35)]) -->
-<!-- ``` -->
 
 ```{r cont-raster, echo = FALSE, message = FALSE, fig.asp=0.5, fig.cap = "Raster datasets with numeric (left) and categorical values (right).", fig.scap="Raster datasets with numeric and categorical values.", warning=FALSE}
 source("https://github.com/Robinlovelace/geocompr/raw/main/code/03-cont-raster-plot.R", print.eval = TRUE)
 ```
 
-### Raster subsetting
+```{block2 coltab, type='rmdnote'}
+Categorical raster objects can also store information about the colors associated with each value using a color table.
+The color table is a data frame with three (red, green, blue) or four (alpha) columns, where each row relates to one value.
+Color tables in **terra** can be viewed or set with the `coltab()` function (see `?coltab`).
+Importantly, saving a raster object with a color table to a file (e.g., GeoTIFF) will also save the color information.
+```
 
-<!--jn:toDo-->
-<!--reread and improve text-->
+### Raster subsetting
 
 Raster subsetting is done with the base R operator `[`, which accepts a variety of inputs:
 \index{raster!subsetting}
@@ -675,9 +659,9 @@ elev[1, 1]
 elev[1]
 ```
 
-To extract all values or complete rows, you can use `values()`.
-For multi-layered raster objects, this will return the cell value(s) for each layer.
+Subsetting of multi-layered raster objects will return the cell value(s) for each layer.
 For example, `c(elev, grain)[1]` returns a data frame with one row and two columns --- one for each layer.
+To extract all values or complete rows, you can also use `values()`.
 
 Cell values can be modified by overwriting existing values in conjunction with a subsetting operation.
 The following code chunk, for example, sets the upper left cell of `elev` to 0 (results not shown):
@@ -691,20 +675,22 @@ Leaving the square brackets empty is a shortcut version of `values()` for retrie
 Multiple cells can also be modified in this way:
 
 ```{r 03-attribute-operations-61}
-elev[1, 1:2] = 0
+elev[1, c(1, 2)] = 0
 ```
 
-<!--jn:toDo-->
-<!--show how to add/replace NAs-->
+Replacing values of multilayered rasters can be done with a matrix with as many columns as layers and rows as replaceable cells (results not shown):
 
-<!-- jn:toDo -->
-<!-- how to replace values in a multilayered raster? -->
+```{r 03-attribute-operations-61b, eval=FALSE}
+two_layers = c(grain, elev) 
+two_layers[1] = cbind(c(0), c(4))
+two_layers[]
+```
 
 ### Summarizing raster objects
 
 **terra** contains functions for extracting descriptive statistics\index{statistics} for entire rasters.
 Printing a raster object to the console by typing its name returns minimum and maximum values of a raster.
-`summary()` provides common descriptive statistics\index{statistics} (minimum, maximum, quartiles and number of `NA`s).
+`summary()` provides common descriptive statistics\index{statistics} -- minimum, maximum, quartiles and number of `NA`s for continuous rasters and a number of cells of each class for categorical rasters.
 Further summary operations such as the standard deviation (see below) or custom summary statistics can be calculated with `global()`. 
 \index{raster!summarizing}
 
@@ -713,8 +699,10 @@ global(elev, sd)
 ```
 
 ```{block2 03-attribute-operations-63, type='rmdnote'}
-If you provide the `summary()` and `global()` functions with a mulit-layered raster object, they will summarize each layer separately, as can be illustrated by running: `summary(c(elev, grain))`.
+If you provide the `summary()` and `global()` functions with a multi-layered raster object, they will summarize each layer separately, as can be illustrated by running: `summary(c(elev, grain))`.
 ```
+
+Additionally, the `freq()` function allows to get the frequency table of categorical values.
 
 Raster value statistics can be visualized in a variety of ways.
 Specific functions such as `boxplot()`, `density()`, `hist()` and `pairs()` work also with raster objects, as demonstrated in the histogram created with the command below (not shown):
@@ -723,19 +711,16 @@ Specific functions such as `boxplot()`, `density()`, `hist()` and `pairs()` work
 hist(elev)
 ```
 
-In case a visualization function does not work with raster objects, one can extract the raster data to be plotted with the help of `values()`.
+In case the desired visualization function does not work with raster objects, one can extract the raster data to be plotted with the help of `values()` (Section \@ref(raster-subsetting)).
 \index{raster!values}
 
 Descriptive raster statistics belong to the so-called global raster operations.
 These and other typical raster processing operations are part of the map algebra scheme, which are covered in the next chapter (Section \@ref(map-algebra)).
 
-<!--jn:toDo-->
-<!--think about updating the below block, as the select function is not longer a part of terra-->
-
 ```{block 03-attribute-operations-65, type='rmdnote'}
-Some function names clash between packages (e.g., `select()`, as discussed in a previous note).
-In addition to not loading packages by referring to functions verbosely (e.g., `dplyr::select()`), another way to prevent function names clashes is by unloading the offending package with `detach()`.
-The following command, for example, unloads the **raster** package (this can also be done in the *package* tab which resides by default in the right-bottom pane in RStudio): `detach("package:raster", unload = TRUE, force = TRUE)`.
+Some function names clash between packages (e.g., a function with the name `extract()` exist in both **terra** and **tidyr** packages).
+In addition to not loading packages by referring to functions verbosely (e.g., `tidyr::extract()`), another way to prevent function names clashes is by unloading the offending package with `detach()`.
+The following command, for example, unloads the **terra** package (this can also be done in the *package* tab which resides by default in the right-bottom pane in RStudio): `detach("package:terra", unload = TRUE, force = TRUE)`.
 The `force` argument makes sure that the package will be detached even if other packages depend on it.
 This, however, may lead to a restricted usability of packages depending on the detached package, and is therefore not recommended.
 ```
