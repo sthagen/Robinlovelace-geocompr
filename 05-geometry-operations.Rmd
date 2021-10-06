@@ -551,22 +551,21 @@ linestring_sf2
 ```
 
 ## Geometric operations on raster data {#geo-ras}
-<!--jn:toDo-->
-<!-- reread and rethink this section -->
 
 \index{raster!manipulation} 
 Geometric raster operations include the shift, flipping, mirroring, scaling, rotation or warping of images.
 These operations are necessary for a variety of applications including georeferencing, used to allow images to be overlaid on an accurate map with a known CRS [@liu_essential_2009].
-A variety of georeferencing techniques exist, including
+A variety of georeferencing techniques exist, including:
 
-- georectification based on known [ground control points](http://www.qgistutorials.com/en/docs/georeferencing_basics.html); 
-- orthorectification, which also accounts for local topography; and
-- image [registration](https://en.wikipedia.org/wiki/Image_registration) is used to combine images of the same thing but shot from different sensors the process of aligning one image with another (in terms of coordinate system, and resolution). 
+- Georectification based on known [ground control points](https://www.qgistutorials.com/en/docs/3/georeferencing_basics.html);
+- Orthorectification, which also accounts for local topography
+- Image [registration](https://en.wikipedia.org/wiki/Image_registration) is used to combine images of the same thing but shot from different sensors the process of aligning one image with another (in terms of coordinate system, and resolution)
 
-R is unsuitable for the first two points since these often require manual intervention which is why they are usually done with the help of dedicated GIS software (see also Chapter \@ref(gis)).
+R is rather unsuitable for the first two points since these often require manual intervention which is why they are usually done with the help of dedicated GIS software (see also Chapter \@ref(gis)).
 On the other hand, aligning several images is possible in R and this section shows among others how to do so.
 This often includes changing the extent, the resolution and the origin of an image.
 A matching projection is of course also required but is already covered in Section \@ref(reprojecting-raster-geometries).
+
 In any case, there are other reasons to perform a geometric operation on a single raster image.
 For instance, in Chapter \@ref(location) we define metropolitan areas in Germany as 20 km^2^ pixels with more than 500,000 inhabitants. 
 The original inhabitant raster, however, has a resolution of 1 km^2^ which is why we will decrease (aggregate) the resolution by a factor of 20 (see Section \@ref(define-metropolitan-areas)).
@@ -579,11 +578,9 @@ Sometimes a coarser resolution is sufficient for the task at hand.
 \index{raster!intersection} 
 In Section \@ref(spatial-raster-subsetting) we have shown how to extract values from a raster overlaid by other spatial objects.
 To retrieve a spatial output, we can use almost the same subsetting syntax.
-The only difference is that we have to make clear that we would like to keep the matrix structure by setting the `drop`-parameter to `FALSE`.
+The only difference is that we have to make clear that we would like to keep the matrix structure by setting the `drop` argument to `FALSE`.
 This will return a raster object containing the cells whose midpoints overlap with `clip`.
 
-<!--jn:toDo-->
-<!-- the below code in terra works differntly than in raster -->
 ```{r 05-geometry-operations-36}
 elev = rast(system.file("raster/elev.tif", package = "spData"))
 clip = rast(xmin = 0.9, xmax = 1.8, ymin = -0.45, ymax = 0.45,
@@ -603,10 +600,13 @@ We can deal with such mismatches by aligning the rasters.
 In the simplest case, two images only differ with regard to their extent.
 Following code adds one row and two columns to each side of the raster while setting all new values to an elevation of 1000 meters (Figure \@ref(fig:extend-example)).
 
-```{r extend-example, fig.cap = "Original raster extended by one row on each side (top, bottom) and two columns on each side (right, left).", fig.scap="Extending rasters."}
+```{r extend-example0}
 elev = rast(system.file("raster/elev.tif", package = "spData"))
 elev_2 = extend(elev, c(1, 2))
-plot(elev_2)
+```
+
+```{r extend-example, fig.cap = "Original raster (left) and the same raster (right) extended by one row on the top and bottom and two columns on the left and right.", fig.scap="Extending rasters.", echo=FALSE, fig.asp=0.6}
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/05-extend-example.R", print.eval = TRUE)
 ```
 
 Performing an algebraic operation on two objects with differing extents in R, the **terra** package returns an error.
@@ -642,16 +642,14 @@ Looking at Figure \@ref(fig:origin-example) reveals the effect of changing the o
 # change the origin
 origin(elev_4) = c(0.25, 0.25)
 plot(elev_4)
-# and add the original raster
-plot(elev, add = TRUE)
+plot(elev, add = TRUE) # and add the original raster
 ```
 
 Note that changing the resolution (next section) frequently also changes the origin.
 
-### Aggregation and disaggregation
+### Aggregation, disaggregation and resampling
 
 <!--jn:toDo-->
-<!-- add a paragraph or two about resampling -->
 <!-- plus revise the following section -->
 
 \index{raster!aggregation} 
@@ -696,12 +694,12 @@ identical(dem, dem_disagg)
 ```{r bilinear, echo = FALSE, fig.width=8, fig.height=10, fig.cap="The distance-weighted average of the four closest input cells determine the output when using the bilinear method for disaggregation.", fig.cap="Bilinear disaggregation in action."}
 elev = rast(system.file("raster/elev.tif", package = "spData"))
 elev_agg = aggregate(elev, fact = 2, fun = mean)
-plot(extend(elev, 1), col = NA, legend = FALSE)
+plot(extend(elev, 1), col = NA, legend = FALSE, mar = c(3, 3, 2, 4))
 plot(elev_agg, add = TRUE)
 xy_1 = xyFromCell(elev, 1)
 xy_2 = xyFromCell(elev_agg, c(1, 2, 4, 5))
-arrows(xy_2[, 1], xy_2[, 2], xy_1[, 1], xy_1[, 2], length = 0.1)
-points(xy_1, pch = 16, col = "black")
+arrows(xy_2[, 1], xy_2[, 2], xy_1[, 1], xy_1[, 2], length = 0.05)
+# points(xy_1, pch = 16, col = "black", cex = 2)
 points(xy_2, pch = 21, bg = "salmon", col = "black")
 plot(as.polygons(elev, dissolve = FALSE)[1], add = TRUE)
 ```
@@ -722,7 +720,6 @@ By default, it uses the `bilinear`-interpolation.
 dem_agg = extend(dem_agg, 2)
 dem_disagg_2 = resample(dem_agg, dem)
 ```
-
 
 <!--jn:toDo-->
 <!-- update the advice -->
@@ -765,8 +762,7 @@ We will use two objects to illustrate raster cropping:
 - A vector (`sf`) object `zion` representing Zion National Park.
 
 Both target and cropping objects must have the same projection.
-The following code chunk therefore not only loads the datasets, from the **spDataLarge** package installed in Chapter \@ref(spatial-class),
-it also reprojects `zion` (see Section \@ref(reproj-geo-data) for more on reprojection):
+The following code chunk therefore not only reads the datasets from the **spDataLarge** package9 installed in Chapter \@ref(spatial-class)), it also reprojects `zion` (see Section \@ref(reproj-geo-data) for more on reprojection):
 
 ```{r 05-geometry-operations-43, results='hide'}
 srtm = rast(system.file("raster/srtm.tif", package = "spDataLarge"))
@@ -775,10 +771,10 @@ zion = st_transform(zion, crs(srtm))
 ```
 
 We will use `crop()` from the **terra** package to crop the `srtm` raster.
-`crop()` reduces the rectangular extent of the object passed to its first argument based on the extent of the object passed to its second argument, as demonstrated in the command below (which generates Figure \@ref(fig:cropmask)(B) --- note the smaller extent of the raster background):
+It reduces the rectangular extent of the object passed to its first argument based on the extent of the object passed to its second argument, as demonstrated in the command below (which generates Figure \@ref(fig:cropmask)(B) --- note the smaller extent of the raster background):
 
 ```{r 05-geometry-operations-44}
-srtm_cropped = crop(srtm, zion)
+srtm_cropped = crop(srtm, vect(zion))
 ```
 
 \index{raster-vector!raster masking} 
@@ -789,8 +785,13 @@ The following command therefore masks every cell outside of the Zion National Pa
 srtm_masked = mask(srtm, vect(zion))
 ```
 
-<!--jn:toDo-->
-<!-- mention that crop + mask are most often used together -->
+Importantly, we want to use both `crop()` and `mask()` together in most cases. 
+This combination of functions would (a) limit the raster's extent to our area of interest and then (b) replace all of the values outside of the area to NA.
+
+```{r}
+srtm_cropped = crop(srtm, vect(zion))
+srtm_final = mask(srtm_cropped, vect(zion))
+```
 
 Changing the settings of `mask()` yields different results.
 Setting `updatevalue = 0`, for example, will set all pixels outside the national park to 0.
@@ -808,23 +809,23 @@ pz1 = tm_shape(srtm) +
   tm_raster(palette = terrain_colors, legend.show = FALSE, style = "cont") + 
   tm_shape(zion) + 
   tm_borders(lwd = 2) + 
-  tm_layout(main.title = "A. Original")
+  tm_layout(main.title = "A. Original", inner.margins = 0)
 pz2 = tm_shape(srtm_cropped) +
   tm_raster(palette = terrain_colors, legend.show = FALSE, style = "cont") + 
   tm_shape(zion) +
   tm_borders(lwd = 2) + 
-  tm_layout(main.title = "B. Crop")
+  tm_layout(main.title = "B. Crop", inner.margins = 0)
 pz3 = tm_shape(srtm_masked) + 
   tm_raster(palette = terrain_colors, legend.show = FALSE, style = "cont") + 
   tm_shape(zion) + 
   tm_borders(lwd = 2) + 
-  tm_layout(main.title = "C. Mask")
+  tm_layout(main.title = "C. Mask", inner.margins = 0)
 pz4 = tm_shape(srtm_inv_masked) +
   tm_raster(palette = terrain_colors, legend.show = FALSE, style = "cont") + 
   tm_shape(zion) +
   tm_borders(lwd = 2) + 
-  tm_layout(main.title = "D. Inverse mask")
-tmap_arrange(pz1, pz2, pz3, pz4, ncol = 4)
+  tm_layout(main.title = "D. Inverse mask", inner.margins = 0)
+tmap_arrange(pz1, pz2, pz3, pz4, ncol = 4, asp = NA)
 ```
 
 ### Raster extraction
@@ -834,18 +835,15 @@ tmap_arrange(pz1, pz2, pz3, pz4, ncol = 4)
 <!-- 1. explain the need of the use of `vect()` -->
 <!-- 2. wait for https://github.com/rspatial/terra/issues/89 -->
 
-<!--jn:toDo-->
-<!-- add info about exact = TRUE -->
-
 \index{raster-vector!raster extraction} 
 Raster extraction is the process of identifying and returning the values associated with a 'target' raster at specific locations, based on a (typically vector) geographic 'selector' object.
 The results depend on the type of selector used (points, lines or polygons) and arguments passed to the `terra::extract()` function, which we use to demonstrate raster extraction.
 The reverse of raster extraction --- assigning raster cell values based on vector objects --- is rasterization, described in Section \@ref(rasterization).
 
-The simplest example is extracting the value of a raster cell at specific **points**.
+The basic example is of extracting the value of a raster cell at specific **points**.
 For this purpose, we will use `zion_points`, which contain a sample of 30 locations within the Zion National Park (Figure \@ref(fig:pointextr)). 
-The following command extracts elevation values from `srtm` and creates a data frame with cells' IDs and related `srtm` values for each point.
-Now, we can add the resulting object to our  `zion_points` dataset with the `cbind` function: 
+The following command extracts elevation values from `srtm` and creates a data frame with points' IDs (one value per vector's row) and related `srtm` values for each point.
+Now, we can add the resulting object to our `zion_points` dataset with the `cbind()` function: 
 
 ```{r 05-geometry-operations-47}
 data("zion_points", package = "spDataLarge")
@@ -853,26 +851,17 @@ elevation = terra::extract(srtm, vect(zion_points))
 zion_points = cbind(zion_points, elevation)
 ```
 
-```{r 05-geometry-operations-48, echo=FALSE, eval=FALSE}
-# Aim: demonstrate buffer arg in raster extract
-elev_b1 = terra::extract(srtm, vect(zion_points), buffer = 1000)
+```{r, echo=FALSE, eval=FALSE}
+library(dplyr)
+zion_points2 = zion_points
+zion_points2$a = 1
+zion_points2 = zion_points2 %>% group_by(a) %>% summarise()
+elevation = terra::extract(srtm, vect(zion_points2))
+zion_points = cbind(zion_points, elevation)
 ```
 
-The `buffer` argument can be used to specify a buffer radius (in meters) around each point.
-The result of `terra::extract(srtm, vect(zion_points), buffer = 1000)`, for example, is a list of vectors, each of which representing the values of cells inside the buffer associated with each point.
-In practice, this example is a special case of extraction with a polygon selector, described below.
-
-```{r pointextr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Locations of points used for raster extraction.", out.width="60%", fig.asp=0.57}
-library(tmap)
-rast_poly_point = tm_shape(srtm) +
-  tm_raster(palette = terrain_colors, title = "Elevation (m)", 
-            legend.show = TRUE, style = "cont") + 
-  tm_shape(zion) +
-  tm_borders(lwd = 2) + 
-  tm_shape(zion_points) + 
-  tm_symbols(shape = 1, col = "black") + 
-  tm_layout(legend.frame = TRUE, legend.position = c("right", "top"))
-rast_poly_point
+```{r pointextr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Locations of points used for raster extraction (left) and their 1km buffers (right).", fig.asp=0.57}
+source("https://github.com/Robinlovelace/geocompr/raw/main/code/05-pointextr.R", print.eval = TRUE)
 ```
 
 Raster extraction also works with **line** selectors.
@@ -888,10 +877,11 @@ zion_transect = cbind(c(-113.2, -112.9), c(37.45, 37.2)) %>%
 ```{r 05-geometry-operations-50, eval=FALSE, echo=FALSE}
 # Aim: show how extraction works with non-straight lines by
 # using this alternative line object:
-zion_transect = cbind(c(-113.2, -112.9, -113.2), c(37.45, 37.2, 37.5)) %>%
+zion_transect2 = cbind(c(-113.2, -112.9, -113.2), c(37.45, 37.2, 37.5)) %>%
   st_linestring() %>% 
   st_sfc(crs = crs(srtm)) %>% 
   st_sf()
+zion_transect = rbind(zion_transect, zion_transect2)
 ```
 
 The utility of extracting heights from a linear selector is illustrated by imagining that you are planning a hike.
@@ -904,10 +894,11 @@ transect = terra::extract(srtm, vect(zion_transect), cells = TRUE)
 Note the use of `cells = TRUE` arguments to return cell IDs *along* the path. 
 The result is a list containing a matrix of cell IDs in the first column and elevation values in the second.
 The number of list elements is equal to the number of lines or polygons from which we are extracting values.
-The subsequent code chunk first converts this tricky matrix-in-a-list object into a simple data frame, returns the coordinates associated with each extracted cell, and finds the associated distances along the transect (see `?geosphere::distGeo()` for details):
+The subsequent code chunk first returns the coordinates associated with each extracted cell, finds the distances between cells along the transect (see `?geosphere::distGeo()` for details), and calculates their cumulative sum:
 
 <!--jn:toDo-->
 <!-- rethink this code -->
+<!-- it must work for many lines! -->
 
 ```{r 05-geometry-operations-52}
 transect_coords = xyFromCell(srtm, transect$cell)
@@ -915,7 +906,7 @@ pair_dist = geosphere::distGeo(transect_coords)[-nrow(transect_coords)]
 transect$dist = c(0, cumsum(pair_dist)) 
 ```
 
-The resulting `transect_df` can be used to create elevation profiles, as illustrated in Figure \@ref(fig:lineextr)(B).
+The resulting `transect` can be used to create elevation profiles, as illustrated in Figure \@ref(fig:lineextr)(B).
 
 ```{r lineextr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Location of a line used for raster extraction (left) and the elevation along this line (right).", fig.scap="Line-based raster extraction."}
 library(tmap)
@@ -952,7 +943,7 @@ print(plot_transect, vp = viewport(layout.pos.row = 2, layout.pos.col = 2))
 
 The final type of geographic vector object for raster extraction is **polygons**.
 Like lines and buffers, polygons tend to return many raster values per polygon.
-This is demonstrated in the command below, which results in a data frame with column names  `ID` (the row number of the polygon) and `srtm` (associated elevation values):
+This is demonstrated in the command below, which results in a data frame with column names `ID` (the row number of the polygon) and `srtm` (associated elevation values):
 
 ```{r 05-geometry-operations-53, eval=FALSE, echo=FALSE}
 # aim: create zion_many to test multi-polygon results
@@ -986,11 +977,15 @@ group_by(zion_srtm_values, ID) %>%
   summarize(across(srtm, list(min = min, mean = mean, max = max)))
 ```
 
+<!--jn:toDo -->
+<!--should we use the tidyverse name or dplyr here?-->
+<!--btw we could also add reference to the tidyverse paper somewhere in the book-->
+
 The preceding code chunk used the **tidyverse**\index{tidyverse (package)} to provide summary statistics for cell values per polygon ID, as described in Chapter \@ref(attr).
-The results provide useful summaries, for example that the maximum height in the park is around 2,661 meters (other summary statistics, such as standard deviation, can also be calculated in this way).
+The results provide useful summaries, for example that the maximum height in the park is around 2,661 meters above see level (other summary statistics, such as standard deviation, can also be calculated in this way).
 Because there is only one polygon in the example a data frame with a single row is returned; however, the method works when multiple selector polygons are used.
 
-The same approach works for counting occurrences of categorical raster values within polygons.
+The similar approach works for counting occurrences of categorical raster values within polygons.
 This is illustrated with a land cover dataset (`nlcd`) from the **spDataLarge** package in Figure \@ref(fig:polyextr)(B), and demonstrated in the code below:
 
 ```{r 05-geometry-operations-56, warning=FALSE, message=FALSE}
@@ -1004,17 +999,20 @@ zion_nlcd %>%
 
 ```{r polyextr, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Area used for continuous (left) and categorical (right) raster extraction."}
 rast_poly_srtm = tm_shape(srtm) + 
-  tm_raster(palette = terrain_colors, title = "Elevation (m)", legend.show = TRUE, style = "cont") + 
+  tm_raster(palette = terrain_colors, title = "Elevation (m)",
+            legend.show = TRUE, style = "cont") + 
   tm_shape(zion) +
-  tm_borders(lwd = 2) +
+  tm_polygons(lwd = 2, alpha = 0.3) +
   tm_layout(main.title = "A. Continuous data extraction",
-            main.title.size = 1, legend.frame = TRUE, legend.position = c("left", "bottom"))
+            main.title.size = 1, legend.frame = TRUE,
+            legend.position = c("left", "bottom"))
 rast_poly_nlcd = tm_shape(nlcd) +
   tm_raster(title = "Land cover", legend.show = TRUE) + 
   tm_shape(zion) +
-  tm_borders(lwd = 2) +
+  tm_polygons(lwd = 2, alpha = 0.3) +
   tm_layout(main.title = "B. Categorical data extraction", 
-            main.title.size = 1, legend.frame = TRUE, legend.position = c("left", "bottom"))
+            main.title.size = 1, legend.frame = TRUE, 
+            legend.position = c("left", "bottom"))
 tmap_arrange(rast_poly_srtm, rast_poly_nlcd, ncol = 2)
 ```
 
@@ -1028,6 +1026,11 @@ tmap_arrange(rast_poly_srtm, rast_poly_nlcd, ncol = 2)
 <!-- - **Parallelization**: this approach works when using many geographic vector selector objects by splitting them into groups and extracting cell values independently for each group (see `?raster::clusterR()` for details of this approach) -->
 <!-- - Use the **velox** package [@hunziker_velox:_2017], which provides a fast method for extracting raster data that fits in memory (see the package's [`extract`](https://hunzikp.github.io/velox/extract.html) vignette for details) -->
 <!-- - Using **R-GIS bridges** (see Chapter \@ref(gis)): efficient calculation of raster statistics from polygons can be found in the SAGA function `saga:gridstatisticsforpolygons`, for example, which can be accessed via **RQGIS** -->
+
+
+<!--jn:toDo-->
+<!-- add info about exact = TRUE -->
+<!-- block2 -->
 
 ### Rasterization {#rasterization}
 
@@ -1058,17 +1061,16 @@ First, we create a raster representing the presence or absence of cycle hire poi
 In this case `rasterize()` requires only one argument in addition to `x` and `y` (the aforementioned vector and raster objects): a value to be transferred to all non-empty cells specified by `field` (results illustrated Figure \@ref(fig:vector-rasterization1)(B)).
 
 ```{r 05-geometry-operations-58}
-ch_raster1 = rasterize(vect(cycle_hire_osm_projected), raster_template, field = 1)
+ch_raster1 = rasterize(vect(cycle_hire_osm_projected), raster_template,
+                       field = 1)
 ```
 
 The `fun` argument specifies summary statistics used to convert multiple observations in close proximity into associate cells in the raster object.
-<!--jn:toDo-->
-<!-- check the default -->
 By default `fun = "last"` is used but other options such as `fun = "length"` can be used, in this case to count the number of cycle hire points in each grid cell (the results of this operation are illustrated in Figure \@ref(fig:vector-rasterization1)(C)).
 
 ```{r 05-geometry-operations-59}
 ch_raster2 = rasterize(vect(cycle_hire_osm_projected), raster_template, 
-                       field = 1, fun = "length")
+                       fun = "length")
 ```
 
 The new output, `ch_raster2`, shows the number of cycle hire points in each grid cell.
@@ -1094,17 +1096,16 @@ raster_template2 = rast(ext(california), resolution = 0.5,
                         crs = st_crs(california)$wkt)
 ```
 
-Line rasterization is demonstrated in the code below.
-In the resulting raster, all cells that are touched by a line get a value, as illustrated in Figure \@ref(fig:vector-rasterization2)(A).
-<!--jn:toDo-->
-<!-- explain touches = TRUE -->
+When considering line or polygon rasterization, one useful additional argument is `touches`.
+By default it is `FALSE`, but when changed to `TRUE` -- all cells that are touched by a line or polygon border get a value.
+Line rasterization with `touches = TRUE` is demonstrated in the code below (Figure \@ref(fig:vector-rasterization2)(A)).
 
 ```{r 05-geometry-operations-62}
 california_raster1 = rasterize(vect(california_borders), raster_template2,
                                touches = TRUE)
 ```
 
-Polygon rasterization, by contrast, selects only cells whose centroids are inside the selector polygon, as illustrated in Figure \@ref(fig:vector-rasterization2)(B).
+Compare it to a polygon rasterization, with `touches = FALSE` by default, which selects only cells whose centroids are inside the selector polygon, as illustrated in Figure \@ref(fig:vector-rasterization2)(B).
 
 ```{r 05-geometry-operations-63}
 california_raster2 = rasterize(vect(california), raster_template2) 
@@ -1137,6 +1138,7 @@ In R, vectorization refers to the possibility of replacing `for`-loops and alike
 
 The simplest form of vectorization is to convert the centroids of raster cells into points.
 `as.points()` does exactly this for all non-`NA` raster grid cells (Figure \@ref(fig:raster-vectorization1)).
+Note, here we also used `st_as_sf()` to convert the resulting object to the `sf` class.
 
 ```{r 05-geometry-operations-65}
 elev_point = as.points(elev) %>% 
@@ -1182,10 +1184,6 @@ The final type of vectorization involves conversion of rasters to polygons.
 This can be done with `raster::as.polygons()`, which converts each raster cell into a polygon consisting of five coordinates, all of which are stored in memory (explaining why rasters are often fast compared with vectors!).
 
 This is illustrated below by converting the `grain` object into polygons and subsequently dissolving borders between polygons with the same attribute values (also see the `dissolve` argument in `as.polygons()`).
-<!--jn:toDo-->
-<!-- think about the next par -->
-<!-- Attributes in this case are stored in a column called `layer` (see Section \@ref(geometry-unions) and Figure \@ref(fig:raster-vectorization2)). -->
-<!-- (Note: a convenient alternative for converting rasters into polygons is `spex::polygonize()` which by default returns an `sf` object.) -->
 
 ```{r 05-geometry-operations-67}
 grain = rast(system.file("raster/grain.tif", package = "spData"))
