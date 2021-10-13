@@ -7,7 +7,7 @@ This chapter requires the following packages:
 
 ```r
 library(sf)
-library(raster)
+library(terra)
 library(dplyr)
 library(spData)
 ```
@@ -61,10 +61,9 @@ usa_parks = st_read(dsn = "nps_boundary.shp")
 ## Geographic data packages
 
 \index{data packages}
-A multitude of R packages have been developed for accessing geographic data, some of which are presented in Table \@ref(tab:datapackages).
+Many R packages have been developed for accessing geographic data, some of which are presented in Table \@ref(tab:datapackages).
 These provide interfaces to one or more spatial libraries or geoportals and aim to make data access even quicker from the command line.
 
-<!-- add sentinel2 package as soon as it is published on CRAN https://github.com/IVFL-BOKU/sentinel2-->
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:datapackages)Selected R packages for geographic data retrieval.</caption>
  <thead>
@@ -80,7 +79,11 @@ These provide interfaces to one or more spatial libraries or geoportals and aim 
   </tr>
   <tr>
    <td style="text-align:left;"> osmdata </td>
-   <td style="text-align:left;"> Download and import of OpenStreetMap data. </td>
+   <td style="text-align:left;"> Download and import small OpenStreetMap datasets. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> osmextract </td>
+   <td style="text-align:left;"> Download and import large OpenStreetMap datasets. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> raster </td>
@@ -138,6 +141,12 @@ The result is a multilayer object of class `RasterStack`.
 
 ```r
 library(raster)
+#> Loading required package: sp
+#> 
+#> Attaching package: 'raster'
+#> The following object is masked from 'package:dplyr':
+#> 
+#>     select
 u = "https://github.com/Robinlovelace/geocompr/releases/download/1.2/worldclim_prec.Rds"
 worldclim_prec = readRDS(url(u))
 class(worldclim_prec)
@@ -158,9 +167,14 @@ parks = opq(bbox = "leeds uk") %>%
   osmdata_sf()
 ```
 
-OpenStreetMap is a vast global database of crowd-sourced data and it is growing daily.
-Although the quality is not as spatially consistent as many official datasets, OSM data have many advantages: they are globally available free of charge and using crowd-source data can encourage 'citizen science' and contributions back to the digital commons.
-Further examples of **osmdata** in action are provided in Chapters \@ref(gis), \@ref(transport) and \@ref(location).
+A limitation with the **osmdata** package is that it is *rate limited*, meaning that it cannot download large OSM datasets (e.g. all the OSM data for a large city).
+To overcome this limitation, the **osmextract** package was developed, which can be used to download and import binary `.pbf` files containing compressed versions of the OSM database for pre-defined regions.
+<!--todo: add proper citation-->
+
+OpenStreetMap is a vast global database of crowd-sourced data, is growing daily, and has a wider ecosystem of tools enabling easy access to the data, from the [Overpass turbo](https://overpass-turbo.eu/) web service for rapid development and testing of OSM queries to [osm2pgsql](https://osm2pgsql.org/) for importing the data into a PostGIS database.
+Although the quality of datasets derived from OSM varies, the data source and wider OSM ecosystems have many advantages: they provide datasets that are available globally, free of charge, and constantly improving thanks to an army of volunteers.
+Using OSM encourages 'citizen science' and contributions back to the digital commons (you can start editing data representing a part of the world you know well at [www.openstreetmap.org](https://www.openstreetmap.org)).
+Further examples of OSM data in action are provided in Chapters \@ref(gis), \@ref(transport) and \@ref(location).
 
 Sometimes, packages come with inbuilt datasets.
 These can be accessed in four ways: by attaching the package (if the package uses 'lazy loading' as **spData** does), with `data(dataset)`, by referring to the dataset with `pkg::dataset` or with `system.file()` to access raw data files.
@@ -193,7 +207,7 @@ endpoint = "/figis/geoserver/wfs"
 q = list(request = "GetCapabilities")
 res = httr::GET(url = httr::modify_url(base_url, path = endpoint), query = q)
 res$url
-#> [1] "http://www.fao.org/figis/geoserver/wfs?request=GetCapabilities"
+#> [1] "https://www.fao.org/figis/geoserver/wfs?request=GetCapabilities"
 ```
 
 The above code chunk demonstrates how API\index{API} requests can be constructed programmatically with the `GET()` function, which takes a base URL and a list of query parameters which can easily be extended.
@@ -269,6 +283,10 @@ Today the variety of file formats may seem bewildering but there has been much c
 GDAL (which should be pronounced "goo-dal", with the double "o" making a reference to object-orientation), the Geospatial Data Abstraction Library, has resolved many issues associated with incompatibility between geographic file formats since its release in 2000.
 GDAL provides a unified and high-performance interface for reading and writing of many raster and vector data formats.
 Many open and proprietary GIS programs, including GRASS, ArcGIS\index{ArcGIS} and QGIS\index{QGIS}, use GDAL\index{GDAL} behind their GUIs\index{graphical user interface} for doing the legwork of ingesting and spitting out geographic data in appropriate formats.
+
+<!--jn:toDo-->
+<!-- mention cloud tiffs -->
+<!-- mention https://github.com/flatgeobuf/flatgeobuf -->
 
 GDAL\index{GDAL} provides access to more than 200 vector and raster data formats.
 Table \@ref(tab:formats) presents some basic information about selected and often used spatial file formats.
@@ -378,7 +396,7 @@ Aside from GeoPackage, there are other geospatial data exchange formats worth ch
 
 ## Data input (I) {#data-input}
 
-Executing commands such as `sf::st_read()` (the main function we use for loading vector data) or `raster::raster()` (the main function used for loading raster data) silently sets off a chain of events that reads data from files.
+Executing commands such as `sf::st_read()` (the main function we use for loading vector data) or `terra::rast()` (the main function used for loading raster data) silently sets off a chain of events that reads data from files.
 Moreover, there are many R packages containing a wide range of geographic data or providing simple access to different data sources.
 All of them load the data into R or, more precisely, assign objects to your workspace, stored in RAM accessible from the [`.GlobalEnv`](http://adv-r.had.co.nz/Environments.html) of the R session.
 
@@ -558,35 +576,28 @@ It is fast and flexible but it may be worth looking at other packages for specif
 An example is the **geojsonsf** package.
 A [benchmark](https://github.com/ATFutures/geobench) suggests it is around 10 times faster than the **sf** package for reading `.geojson`.
 
+
+
+
 ### Raster data
 
 \index{raster!data input}
 Similar to vector data, raster data comes in many file formats with some of them supporting even multilayer files.
-**raster**'s `raster()` command reads in a single layer.
+**terra**'s `rast()` command reads in a single layer when a file with just one layer is provided.
 
 
 ```r
 raster_filepath = system.file("raster/srtm.tif", package = "spDataLarge")
-single_layer = raster(raster_filepath)
+single_layer = rast(raster_filepath)
 ```
 
-In case you want to read in a single band from a multilayer file, use the `band` parameter to indicate a specific layer.
+It also works in case you want to read a multilayer file.
 
 
 ```r
 multilayer_filepath = system.file("raster/landsat.tif", package = "spDataLarge")
-band3 = raster(multilayer_filepath, band = 3)
+multilayer_rast = rast(multilayer_filepath)
 ```
-
-If you want to read in all bands, use `brick()` or `stack()`.
-
-
-```r
-multilayer_brick = brick(multilayer_filepath)
-multilayer_stack = stack(multilayer_filepath)
-```
-
-Please refer to Section \@ref(raster-classes) for information on the difference between raster stacks and bricks.
 
 <!-- ### Databases -->
 <!-- postgis input example -->
@@ -594,7 +605,7 @@ Please refer to Section \@ref(raster-classes) for information on the difference 
 ## Data output (O) {#data-output}
 
 Writing geographic data allows you to convert from one format to another and to save newly created objects.
-Depending on the data type (vector or raster), object class (e.g., `multipoint` or `RasterLayer`), and type and amount of stored information (e.g., object size, range of values), it is important to know how to store spatial files in the most efficient way.
+Depending on the data type (vector or raster), object class (e.g., `sf` or `SpatRaster`), and type and amount of stored information (e.g., object size, range of values), it is important to know how to store spatial files in the most efficient way.
 The next two sections will demonstrate how to do this.
 
 ### Vector data
@@ -659,14 +670,16 @@ st_write(cycle_hire_xy, "cycle_hire_xy.csv", layer_options = "GEOMETRY=AS_XY")
 st_write(world_wkt, "world_wkt.csv", layer_options = "GEOMETRY=AS_WKT")
 ```
 
+
+
 ### Raster data
 
 \index{raster!data output}
-The `writeRaster()` function saves `Raster*` objects to files on disk. 
+The `writeRaster()` function saves `SpatRaster` objects to files on disk. 
 The function expects input regarding output data type and file format, but also accepts GDAL options specific to a selected file format (see `?writeRaster` for more details).
 
 \index{raster!data types}
-The **raster** package offers nine data types when saving a raster: LOG1S, INT1S, INT1U, INT2S, INT2U, INT4S, INT4U, FLT4S, and FLT8S.^[
+The **terra** package offers nine data types when saving a raster: LOG1S, INT1S, INT1U, INT2S, INT2U, INT4S, INT4U, FLT4S, and FLT8S.^[
 Using INT4U is not recommended as R does not support 32-bit unsigned integers.
 ]
 The data type determines the bit representation of the raster object written to disk (Table \@ref(tab:datatypes)).
@@ -674,6 +687,8 @@ Which data type to use depends on the range of the values of your raster object.
 The more values a data type can represent, the larger the file will get on disk.
 Commonly, one would use LOG1S for bitmap (binary) rasters.
 Unsigned integers (INT1U, INT2U, INT4U) are suitable for categorical data, while float numbers (FLT4S and FLT8S) usually represent continuous data.
+<!--jn:toDo-->
+<!-- check defaults -->
 `writeRaster()` uses FLT4S as the default.
 While this works in most cases, the size of the output file will be unnecessarily large if you save binary or categorical data.
 Therefore, we would recommend to use the data type that needs the least storage space, but is still able to represent all values (check the range of values with the `summary()` function).
@@ -736,8 +751,7 @@ Therefore, we would recommend to use the data type that needs the least storage 
 </tbody>
 </table>
 
-By default, `writeRaster()` saves outputs in its native format as `.grd` files, when a file extension is invalid or missing.
-Other file formats can be specified by changing the extension of the output file name.
+By default, the output file format is derived from the filename.
 Naming a file `*.tif` will create a GeoTIFF file, as demonstrated below:
 
 
@@ -746,23 +760,21 @@ writeRaster(single_layer, filename = "my_raster.tif", datatype = "INT2U")
 ```
 
 Some raster file formats have additional options, that can be set by providing [GDAL parameters](http://www.gdal.org/formats_list.html) to the `options` argument of `writeRaster()`.
-GeoTIFF files, for example, can be compressed using `COMPRESS`:
 <!-- GeoTIFF files, for example, can be compressed using the `COMPRESS` option^[Find out about GeoTIFF options under http://www.gdal.org/frmt_gtiff.html.]: -->
+GeoTIFF files are written in **terra**, by default, with the LZW compression `gdal = c("COMPRESS=LZW")`.
+To change or disable the compression, we need to modify this argument:
 
+<!--jn:toDo-->
+<!-- , "of=COG"? -->
 
 
 ```r
 writeRaster(x = single_layer,
             filename = "my_raster.tif",
             datatype = "INT2U",
-            options = c("COMPRESS=DEFLATE"),
+            gdal = c("COMPRESS=NONE"),
             overwrite = TRUE)
 ```
-
-Note that `writeFormats()` returns a list with all supported file formats on your computer.
-
-<!-- ### Databases -->
-<!-- postgis output example -->
 
 ## Visual outputs
 
@@ -782,23 +794,17 @@ You can specify several properties of the output plot, including width, height a
 
 Additionally, several graphic packages provide their own functions to save a graphical output.
 For example, the **tmap** package has the `tmap_save()` function.
-You can save a `tmap` object to different graphic formats by specifying the object name and a file path to a new graphic file.
+You can save a `tmap` object to different graphic formats or an HTML file by specifying the object name and a file path to a new file.
 
 
 ```r
 library(tmap)
 tmap_obj = tm_shape(world) + tm_polygons(col = "lifeExp")
-tmap_save(tm = tmap_obj, filename = "lifeExp_tmap.png")
+tmap_save(tmap_obj, filename = "lifeExp_tmap.png")
 ```
-
-<!-- Note about that the `plot` function do not create an object -->
-<!-- ```{r} -->
-<!-- a = plot(world["lifeExp"]) -->
-<!-- ``` -->
 
 On the other hand, you can save interactive maps created in the `mapview` package as an HTML file or image using the `mapshot()` function:
 
-<!-- example doesn't work, problem with colors I guess -->
 
 ```r
 library(mapview)
@@ -808,20 +814,21 @@ mapshot(mapview_obj, file = "my_interactive_map.html")
 
 ## Exercises
 
-1. List and describe three types of vector, raster, and geodatabase formats.
 
-1. Name at least two differences between `read_sf()` and the more well-known function `st_read()`.
+E1. List and describe three types of vector, raster, and geodatabase formats.
 
-1. Read the `cycle_hire_xy.csv` file from the **spData** package as a spatial object (Hint: it is located in the `misc\` folder).
+E2. Name at least two differences between `read_sf()` and the more well-known function `st_read()`.
+
+E3. Read the `cycle_hire_xy.csv` file from the **spData** package as a spatial object (Hint: it is located in the `misc\` folder).
 What is a geometry type of the loaded object? 
 
-1. Download the borders of Germany using **rnaturalearth**, and create a new object called `germany_borders`.
+E4. Download the borders of Germany using **rnaturalearth**, and create a new object called `germany_borders`.
 Write this new object to a file of the GeoPackage format.
 
-1. Download the global monthly minimum temperature with a spatial resolution of five minutes using the **raster** package.
+E5. Download the global monthly minimum temperature with a spatial resolution of five minutes using the **raster** package.
 Extract the June values, and save them to a file named `tmin_june.tif` file (hint: use `raster::subset()`).
 
-1. Create a static map of Germany's borders, and save it to a PNG file.
+E6. Create a static map of Germany's borders, and save it to a PNG file.
 
-1. Create an interactive map using data from the `cycle_hire_xy.csv` file. 
+E7. Create an interactive map using data from the `cycle_hire_xy.csv` file. 
 Export this map to a file called `cycle_hire.html`.

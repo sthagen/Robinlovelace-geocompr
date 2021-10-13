@@ -1,3 +1,4 @@
+fig:index-2-4
 tab:gdsl
 fig:interactive
 fig:cranlogs
@@ -14,8 +15,8 @@ fig:geomcollection
 fig:raster-intro-plot
 fig:raster-intro-plot2
 fig:basic-new-raster-plot
+fig:datum-fig
 fig:vector-crs
-fig:raster-crs
 tab:operators
 tab:continents
 fig:coffeemap
@@ -27,6 +28,8 @@ fig:cycle-hire
 fig:spatial-aggregation
 fig:areal-example
 fig:raster-subset
+fig:04-local-operations
+fig:04-ndvi
 fig:focal-example
 fig:seine-simp
 fig:us-simp
@@ -45,6 +48,7 @@ fig:extend-example
 fig:origin-example
 fig:aggregate-example
 fig:bilinear
+fig:resampl
 fig:cropmask
 fig:pointextr
 fig:lineextr
@@ -149,7 +153,8 @@ sfg
 sfc
 sf
 raster-data
-an-introduction-to-raster
+r-packages-for-raster-data-handling
+an-introduction-to-terra
 basic-map-raster
 raster-classes
 crs-intro
@@ -201,7 +206,8 @@ type-trans
 geo-ras
 geometric-intersections
 extent-and-origin
-aggregation-and-disaggregation
+aggregation-disaggregation
+resampling
 raster-vector
 raster-cropping
 raster-extraction

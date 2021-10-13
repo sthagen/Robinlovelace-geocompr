@@ -7,7 +7,7 @@
 
 ```r
 library(sf)
-library(raster)
+library(terra)
 library(dplyr)
 library(spData)
 library(spDataLarge)
@@ -94,17 +94,9 @@ st_crs(london_proj)
 Notable components of this CRS description include the EPSG code (`EPSG: 27700`), the projection ([transverse Mercator](https://en.wikipedia.org/wiki/Transverse_Mercator_projection), `+proj=tmerc`), the origin (`+lat_0=49 +lon_0=-2`) and units (`+units=m`).^[
 For a short description of the most relevant projection parameters and related concepts, see the fourth lecture by Jochen Albrecht hosted at
 http://www.geography.hunter.cuny.edu/~jochen/GTECH361/lectures/ and information at https://proj.org/usage/projections.html.
-<!-- [geography.hunter.cuny.edu/~jochen/GTECH361/lectures/](http://www.geography.hunter.cuny.edu/~jochen/GTECH361/lectures/lecture04/concepts/Map%20coordinate%20systems/Projection%20parameters.htm) as well as [http://proj4.org/parameters.html](http://proj4.org/parameters.html). -->
 Other great resources on projections are spatialreference.org and progonos.com/furuti/MapProj.
 ]
 The fact that the units of the CRS are meters (rather than degrees) tells us that this is a projected CRS: `st_is_longlat(london_proj)` now returns `FALSE` and geometry operations on `london_proj` will work without a warning, meaning buffers can be produced from it using proper units of distance.
-<!-- 
-1 degree distance (great circle distance) at the equator:
-geosphere::alongTrackDistance(c(0, 0), c(0, 1), c(0, 1)) 
-but 1 degree converted into m distance at the latitude of London:
-coords = st_coordinates(london)
-geosphere::alongTrackDistance(coords, coords + c(1, 0), coords + c(1, 0))
--->
 As pointed out above, moving one degree means moving a bit more than 111 km at the equator (to be precise: 111,320 meters).
 This is used as the new buffer distance:
 
@@ -171,6 +163,16 @@ st_distance(london2, london_proj)
 ```
 
 ## Which CRS to use?
+
+<!--jn:toDo-->
+<!--mention websites and the crssuggest package-->
+<!-- https://epsg.org/home.html -->
+
+<!--     Custom CRSs are also ideally specified as WKT2 -->
+<!--     https://epsg.io/ -->
+<!-- the two below websites are not up-to-date -->
+<!--     https://spatialreference.org/ref/epsg/ -->
+<!--     https://epsg.org/home.html -->
 
 \index{CRS!reprojection} 
 \index{projection!World Geodetic System}
@@ -319,7 +321,6 @@ To access and modify it explicitly, use the `st_crs` function, for example, `st_
 Established CRSs captured by EPSG codes are well-suited for many applications.
 However in some cases it is desirable to create a new CRS, using a custom `proj4string`.
 This system allows a very wide range of projections to be created, as we'll see in some of the custom map projections in this section.
-<!-- as we mentioned in Section \@ref(crs-in-r). -->
 
 A long and growing list of projections has been developed and many of these can be set with the `+proj=` element of `proj4string`s.^[
 The Wikipedia page 'List of map projections' has 70+ projections and illustrations.
@@ -332,8 +333,6 @@ To use this projection, we need to specify it using the `proj4string` element, `
 ```r
 world_mollweide = st_transform(world, crs = "+proj=moll")
 ```
-<!-- plot(world_mollweide$geom) -->
-<!-- plot(world_mollweide$geom, graticule = TRUE) -->
 
 <div class="figure" style="text-align: center">
 <img src="06-reproj_files/figure-html/mollproj-1.png" alt="Mollweide projection of the world." width="100%" />
@@ -350,11 +349,9 @@ This projection is used, among others, by the National Geographic Society.
 ```r
 world_wintri = lwgeom::st_transform_proj(world, crs = "+proj=wintri")
 ```
-<!-- plot(world_wintri$geom) -->
-<!-- plot(world_wintri$geom, graticule = TRUE) -->
 
 <div class="figure" style="text-align: center">
-<img src="images/wintriproj-1.png" alt="Winkel tripel projection of the world." width="100%" />
+<img src="06-reproj_files/figure-html/wintriproj-1.png" alt="Winkel tripel projection of the world." width="100%" />
 <p class="caption">(\#fig:wintriproj)Winkel tripel projection of the world.</p>
 </div>
 
@@ -389,8 +386,6 @@ The code below gives the map centered on New York City (Figure \@ref(fig:laeapro
 world_laea2 = st_transform(world,
                            crs = "+proj=laea +x_0=0 +y_0=0 +lon_0=-74 +lat_0=40")
 ```
-<!-- plot(world_laea2$geom) -->
-<!-- plot(world_laea2$geom, graticule = TRUE) -->
 
 <div class="figure" style="text-align: center">
 <img src="06-reproj_files/figure-html/laeaproj2-1.png" alt="Lambert azimuthal equal-area projection of the world centered on New York City." width="100%" />
@@ -398,15 +393,6 @@ world_laea2 = st_transform(world,
 </div>
 
 More information on CRS modifications can be found in the [Using PROJ](https://proj.org/usage/index.html) documentation.
-
-<!-- https://github.com/r-spatial/lwgeom/issues/6 -->
-<!-- ```{r} -->
-<!-- # remotes::install_github("r-spatial/lwgeom") -->
-<!-- library(lwgeom) -->
-<!-- world_3 = lwgeom::st_transform_proj(world, crs = "+proj=wintri") -->
-<!-- plot(world_3$geom) -->
-<!-- ``` -->
-<!-- http://bl.ocks.org/vlandham/raw/9216751/ -->
 
 ## Reprojecting raster geometries
 
@@ -420,87 +406,91 @@ The attributes must subsequently be re-estimated, allowing the new pixels to be 
 In other words, raster reprojection can be thought of as two separate spatial operations: a vector reprojection of cell centroids to another CRS (Section \@ref(reproj-vec-geom)), and computation of new pixel values through resampling (Section \@ref(aggregation-and-disaggregation)).
 Thus in most cases when both raster and vector data are used, it is better to avoid reprojecting rasters and reproject vectors instead.
 
-The raster reprojection process is done with `projectRaster()` from the **raster** package.
-Like the `st_transform()` function demonstrated in the previous section, `projectRaster()` takes a geographic object (a raster dataset in this case) and a `crs` argument.
-However, `projectRaster()` only accepts the lengthy `proj4string` definitions of a CRS rather than concise EPSG codes.
+The raster reprojection process is done with `project()` from the **terra** package.
+Like the `st_transform()` function demonstrated in the previous section, `project()` takes a geographic object (a raster dataset in this case) and some CRS representation as the second argument.
 
-\BeginKnitrBlock{rmdnote}<div class="rmdnote">It is possible to use a EPSG code in a `proj4string` definition with `"+init=epsg:MY_NUMBER"`.
-For example, one can use the `"+init=epsg:4326"` definition to set CRS to WGS84 (EPSG code of 4326).
-The PROJ library automatically adds the rest of the parameters and converts them into `"+init=epsg:4326 +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"`.</div>\EndKnitrBlock{rmdnote}
+<!--jn:toDo-->
+<!-- add new developments in terra -->
+<!-- https://github.com/rspatial/terra/pull/355/files -->
 
 Let's take a look at two examples of raster transformation: using categorical and continuous data.
 Land cover data are usually represented by categorical maps.
-The `nlcd2011.tif` file provides information for a small area in Utah, USA obtained from [National Land Cover Database 2011](https://www.mrlc.gov/nlcd2011.php) in the NAD83 / UTM zone 12N CRS.
+The `nlcd.tif` file provides information for a small area in Utah, USA obtained from [National Land Cover Database 2011](https://www.mrlc.gov/nlcd2011.php) in the NAD83 / UTM zone 12N CRS.
 
 
 ```r
-cat_raster = raster(system.file("raster/nlcd2011.tif", package = "spDataLarge"))
+cat_raster = rast(system.file("raster/nlcd.tif", package = "spDataLarge"))
 crs(cat_raster)
-#> CRS arguments:
-#>  +proj=utm +zone=12 +ellps=GRS80 +units=m +no_defs
+#> [1] "PROJCRS[\"NAD83 / UTM zone 12N\",\n    BASEGEOGCRS[\"NAD83\",\n        DATUM[\"North American Datum 1983\",\n            ELLIPSOID[\"GRS 1980\",6378137,298.257222101,\n                LENGTHUNIT[\"metre\",1]]],\n        PRIMEM[\"Greenwich\",0,\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n        ID[\"EPSG\",4269]],\n    CONVERSION[\"UTM zone 12N\",\n        METHOD[\"Transverse Mercator\",\n            ID[\"EPSG\",9807]],\n        PARAMETER[\"Latitude of natural origin\",0,\n            ANGLEUNIT[\"degree\",0.0174532925199433],\n            ID[\"EPSG\",8801]],\n        PARAMETER[\"Longitude of natural origin\",-111,\n            ANGLEUNIT[\"degree\",0.0174532925199433],\n            ID[\"EPSG\",8802]],\n        PARAMETER[\"Scale factor at natural origin\",0.9996,\n            SCALEUNIT[\"unity\",1],\n            ID[\"EPSG\",8805]],\n        PARAMETER[\"False easting\",500000,\n            LENGTHUNIT[\"metre\",1],\n            ID[\"EPSG\",8806]],\n        PARAMETER[\"False northing\",0,\n            LENGTHUNIT[\"metre\",1],\n            ID[\"EPSG\",8807]]],\n    CS[Cartesian,2],\n        AXIS[\"(E)\",east,\n            ORDER[1],\n            LENGTHUNIT[\"metre\",1]],\n        AXIS[\"(N)\",north,\n            ORDER[2],\n            LENGTHUNIT[\"metre\",1]],\n    USAGE[\n        SCOPE[\"unknown\"],\n        AREA[\"North America - 114°W to 108°W and NAD83 by country\"],\n        BBOX[31.33,-114,84,-108]],\n    ID[\"EPSG\",26912]]"
 ```
 
-In this region, 14 land cover classes were distinguished (a full list of NLCD2011 land cover classes can be found at [mrlc.gov](https://www.mrlc.gov/nlcd11_leg.php)):
+In this region, 8 land cover classes were distinguished (a full list of NLCD2011 land cover classes can be found at [mrlc.gov](https://www.mrlc.gov/nlcd11_leg.php)):
 
 
 ```r
 unique(cat_raster)
-#>  [1] 11 21 22 23 31 41 42 43 52 71 81 82 90 95
+#>   levels
+#> 1      1
+#> 2      2
+#> 3      3
+#> 4      4
+#> 5      5
+#> 6      6
+#> 7      7
+#> 8      8
 ```
 
+<!--jn:toDo-->
+<!-- add a reference to the new resampling part -->
 When reprojecting categorical rasters, the estimated values must be the same as those of the original.
-This could be done using the nearest neighbor method (`ngb`).
+This could be done using the nearest neighbor method (`near`).
 This method sets each new cell value to the value of the nearest cell (center) of the input raster.
 An example is reprojecting `cat_raster` to WGS84, a geographic CRS well suited for web mapping.
 The first step is to obtain the PROJ definition of this CRS, which can be done using the [http://spatialreference.org](http://spatialreference.org/ref/epsg/wgs-84/) webpage. 
-The final step is to reproject the raster with the `projectRaster()` function which, in the case of categorical data, uses the nearest neighbor method (`ngb`):
+The final step is to reproject the raster with the `project()` function which, in the case of categorical data, uses the nearest neighbor method (`near`):
 
 
 ```r
-wgs84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-cat_raster_wgs84 = projectRaster(cat_raster, crs = wgs84, method = "ngb")
+cat_raster_wgs84 = project(cat_raster, "EPSG:4326", method = "near")
 ```
 
-Many properties of the new object differ from the previous one, including the number of columns and rows (and therefore number of cells), resolution (transformed from meters into degrees), and extent, as illustrated in Table \@ref(tab:catraster) (note that the number of categories increases from 14 to 15 because of the addition of `NA` values, not because a new category has been created --- the land cover classes are preserved).
+Many properties of the new object differ from the previous one, including the number of columns and rows (and therefore number of cells), resolution (transformed from meters into degrees), and extent, as illustrated in Table \@ref(tab:catraster) (note that the number of categories increases from 8 to 9 because of the addition of `NA` values, not because a new category has been created --- the land cover classes are preserved).
 
 
 Table: (\#tab:catraster)Key attributes in the original ('cat\_raster') and projected ('cat\_raster\_wgs84') categorical raster datasets.
 
 |CRS   | nrow| ncol|   ncell| resolution| unique_categories|
 |:-----|----:|----:|-------:|----------:|-----------------:|
-|NAD83 | 1359| 1073| 1458207|    31.5275|                14|
-|WGS84 | 1394| 1111| 1548734|     0.0003|                15|
+|NAD83 | 1359| 1073| 1458207|    31.5275|                 8|
+|WGS84 | 1246| 1244| 1550024|     0.0003|                 9|
 
 Reprojecting numeric rasters (with `numeric` or in this case `integer` values) follows an almost identical procedure.
 This is demonstrated below with `srtm.tif` in **spDataLarge** from [the Shuttle Radar Topography Mission (SRTM)](https://www2.jpl.nasa.gov/srtm/), which represents height in meters above sea level (elevation) with the WGS84 CRS:
 
 
 ```r
-con_raster = raster(system.file("raster/srtm.tif", package = "spDataLarge"))
+con_raster = rast(system.file("raster/srtm.tif", package = "spDataLarge"))
 crs(con_raster)
-#> CRS arguments: +proj=longlat +datum=WGS84 +no_defs
+#> [1] "GEOGCRS[\"WGS 84\",\n    DATUM[\"World Geodetic System 1984\",\n        ELLIPSOID[\"WGS 84\",6378137,298.257223563,\n            LENGTHUNIT[\"metre\",1]]],\n    PRIMEM[\"Greenwich\",0,\n        ANGLEUNIT[\"degree\",0.0174532925199433]],\n    CS[ellipsoidal,2],\n        AXIS[\"geodetic latitude (Lat)\",north,\n            ORDER[1],\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n        AXIS[\"geodetic longitude (Lon)\",east,\n            ORDER[2],\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n    ID[\"EPSG\",4326]]"
 ```
-
-
 
 We will reproject this dataset into a projected CRS, but *not* with the nearest neighbor method which is appropriate for categorical data.
 Instead, we will use the bilinear method which computes the output cell value based on the four nearest cells in the original raster.
+<!--jn:toDo-->
+<!-- mention other methods -->
 <!--
 "Quadric and cubic polynomials are also popular interpolation functions for resampling with more complexity and improved accuracy" [@liu_essential_2009].
 However, these interpolation methods are still unavailable in the **raster** package.
 -->
 The values in the projected dataset are the distance-weighted average of the values from these four cells:
 the closer the input cell is to the center of the output cell, the greater its weight.
-The following commands create a text string representing the Oblique Lambert azimuthal equal-area projection, and reproject the raster into this CRS, using the `bilinear` method:
+The following commands create a text string representing WGS 84 / UTM zone 12N, and reproject the raster into this CRS, using the `bilinear` method:
 
 
 ```r
-equalarea = "+proj=laea +lat_0=37.32 +lon_0=-113.04"
-con_raster_ea = projectRaster(con_raster, crs = equalarea, method = "bilinear")
+con_raster_ea = project(con_raster, "EPSG:32612", method = "bilinear")
 crs(con_raster_ea)
-#> CRS arguments:
-#>  +proj=laea +lat_0=37.32 +lon_0=-113.04 +x_0=0 +y_0=0 +datum=WGS84
-#> +units=m +no_defs
+#> [1] "PROJCRS[\"WGS 84 / UTM zone 12N\",\n    BASEGEOGCRS[\"WGS 84\",\n        DATUM[\"World Geodetic System 1984\",\n            ELLIPSOID[\"WGS 84\",6378137,298.257223563,\n                LENGTHUNIT[\"metre\",1]]],\n        PRIMEM[\"Greenwich\",0,\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n        ID[\"EPSG\",4326]],\n    CONVERSION[\"UTM zone 12N\",\n        METHOD[\"Transverse Mercator\",\n            ID[\"EPSG\",9807]],\n        PARAMETER[\"Latitude of natural origin\",0,\n            ANGLEUNIT[\"degree\",0.0174532925199433],\n            ID[\"EPSG\",8801]],\n        PARAMETER[\"Longitude of natural origin\",-111,\n            ANGLEUNIT[\"degree\",0.0174532925199433],\n            ID[\"EPSG\",8802]],\n        PARAMETER[\"Scale factor at natural origin\",0.9996,\n            SCALEUNIT[\"unity\",1],\n            ID[\"EPSG\",8805]],\n        PARAMETER[\"False easting\",500000,\n            LENGTHUNIT[\"metre\",1],\n            ID[\"EPSG\",8806]],\n        PARAMETER[\"False northing\",0,\n            LENGTHUNIT[\"metre\",1],\n            ID[\"EPSG\",8807]]],\n    CS[Cartesian,2],\n        AXIS[\"(E)\",east,\n            ORDER[1],\n            LENGTHUNIT[\"metre\",1]],\n        AXIS[\"(N)\",north,\n            ORDER[2],\n            LENGTHUNIT[\"metre\",1]],\n    USAGE[\n        SCOPE[\"unknown\"],\n        AREA[\"World - N hemisphere - 114°W to 108°W - by country\"],\n        BBOX[0,-114,84,-108]],\n    ID[\"EPSG\",32612]]"
 ```
 
 Raster reprojection on numeric variables also leads to small changes to values and spatial properties, such as the number of cells, resolution, and extent.
@@ -513,47 +503,55 @@ This can have implications for file sizes when raster datasets are saved.
 
 Table: (\#tab:rastercrs)Key attributes in the original ('con\_raster') and projected ('con\_raster\_ea') continuous raster datasets.
 
-|CRS        | nrow| ncol|  ncell| resolution| mean|
-|:----------|----:|----:|------:|----------:|----:|
-|WGS84      |  457|  465| 212505|     0.0008| 1843|
-|Equal-area |  467|  478| 223226|    83.2000| 1842|
+|CRS          | nrow| ncol|  ncell| resolution| mean|
+|:------------|----:|----:|------:|----------:|----:|
+|WGS84        |  457|  465| 212505|     0.0008| 1843|
+|UTM zone 12N |  515|  422| 217330|    83.5334| 1842|
 
-
+<!--jn:toDo-->
+<!-- update this block later and relate to the second chapter -->
 \BeginKnitrBlock{rmdnote}<div class="rmdnote">Of course, the limitations of 2D Earth projections apply as much to vector as to raster data.
 At best we can comply with two out of three spatial properties (distance, area, direction).
 Therefore, the task at hand determines which projection to choose. 
 For instance, if we are interested in a density (points per grid cell or inhabitants per grid cell) we should use an equal-area projection (see also Chapter \@ref(location)).</div>\EndKnitrBlock{rmdnote}
 
+<!--jn:toDo-->
+<!-- add more references -->
 There is more to learn about CRSs.
 An excellent resource in this area, also implemented in R, is the website R Spatial.
-Chapter 6 for this free online book is recommended reading --- see: [rspatial.org/spatial/6-crs.html](http://rspatial.org/spatial/6-crs.html)
+Chapter 6 for this free online book is recommended reading --- see: [rspatial.org/terra/spatial/6-crs.html](https://rspatial.org/terra/spatial/6-crs.html)
 
 ## Exercises
 
-<!-- CRS CONVERSION -->
-<!-- 1. vector reprojection exercise (e.g. modification of proj4) -->
-1. Create a new object called `nz_wgs` by transforming `nz` object into the WGS84 CRS.
-    - Create an object of class `crs` for both and use this to query their CRSs.
-    - With reference to the bounding box of each object, what units does each CRS use?
-    - Remove the CRS from `nz_wgs` and plot the result: what is wrong with this map of New Zealand and why?
 
-1. Transform the `world` dataset to the transverse Mercator projection (`"+proj=tmerc"`) and plot the result.
+E1. Create a new object called `nz_wgs` by transforming `nz` object into the WGS84 CRS.
+
+- Create an object of class `crs` for both and use this to query their CRSs.
+- With reference to the bounding box of each object, what units does each CRS use?
+- Remove the CRS from `nz_wgs` and plot the result: what is wrong with this map of New Zealand and why?
+
+
+
+E2. Transform the `world` dataset to the transverse Mercator projection (`"+proj=tmerc"`) and plot the result.
 What has changed and why?
 Try to transform it back into WGS 84 and plot the new object.
 Why does the new object differ from the original one?
 
-1. Transform the continuous raster (`con_raster`) into NAD83 / UTM zone 12N using the nearest neighbor interpolation method.
+
+
+E3. Transform the continuous raster (`con_raster`) into NAD83 / UTM zone 12N using the nearest neighbor interpolation method.
 What has changed?
 How does it influence the results?
 
-1. Transform the categorical raster (`cat_raster`) into WGS 84 using the bilinear interpolation method.
+
+
+E4. Transform the categorical raster (`cat_raster`) into WGS 84 using the bilinear interpolation method.
 What has changed?
 How does it influence the results?
 
-1. Create your own `proj4string`. 
+
+
+E5. Create your own `proj4string`. 
 It should have the Lambert Azimuthal Equal Area (`laea`) projection, the WGS84 ellipsoid, the longitude of projection center of 95 degrees west, the latitude of projection center of 60 degrees north, and its units should be in meters.
 Next, subset Canada from the `world` object and transform it into the new projection. 
 Plot and compare a map before and after the transformation.
-
-
-

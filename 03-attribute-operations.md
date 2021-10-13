@@ -7,7 +7,7 @@
 
 ```r
 library(sf)
-library(raster)
+library(terra)
 library(dplyr)
 library(stringr) # for working with strings (pattern matching)
 library(tidyr)   # for unite() and separate()
@@ -25,7 +25,6 @@ library(spData)
 Attribute data is non-spatial information associated with geographic (geometry) data.
 A bus stop provides a simple example: its position would typically be represented by latitude and longitude coordinates (geometry data), in addition to its name.
 The name is an *attribute*\index{attribute} of the feature (to use Simple Features terminology) that bears no relation to its geometry.
-<!-- idea: add an example of a bus stop (or modify a previous example so it represents a bus stop) in the previous chapter  -->
 
 Another example is the elevation value (attribute) for a specific grid cell in raster data.
 Unlike the vector data model, the raster data model stores the coordinate of the grid cell indirectly, meaning the distinction between attribute and spatial information is less clear.
@@ -110,7 +109,6 @@ This means that proficiency with attribute data in `sf` objects equates to profi
 
 For many applications, the tidyverse\index{tidyverse (package)} package **dplyr** offers the most effective and intuitive approach for working with data frames.
 Tidyverse compatibility is an advantage of **sf** over its predecessor **sp**, but there are some pitfalls to avoid (see the supplementary `tidyverse-pitfalls` vignette at [geocompr.github.io](https://geocompr.github.io/geocompkg/articles/tidyverse-pitfalls.html) for details).
-<!-- (see [Section 6.7](https://csgillespie.github.io/efficientR/data-carpentry.html#data-processing-with-data.table) of @gillespie_efficient_2016),  -->
 
 ### Vector attribute subsetting
 
@@ -121,7 +119,6 @@ Both sets of functions preserve the spatial components of attribute data in `sf`
 
 The `[` operator can subset both rows and columns. 
 You use indices to specify the elements you wish to extract from an object, e.g., `object[i, j]`, with `i` and `j` typically being numbers or logical vectors --- `TRUE`s and `FALSE`s --- representing rows and columns (they can also be character strings, indicating row or column names).
-<!-- you can also use `[`(world, 1:6, 1) -->
 Leaving `i` or `j` empty returns all rows or columns, so `world[1:5, ]` returns the first five rows and all columns.
 The examples below demonstrate subsetting with base R.
 The results are not shown; check the results on your own computer:
@@ -160,7 +157,6 @@ The base R function `subset()` provides yet another way to achieve the same resu
 small_countries = subset(world, area_km2 < 10000)
 ```
 
-<!-- , after the package has been loaded: [or - it is a part of tidyverse] -->
 Base R functions are mature and widely used.
 However, the more recent **dplyr** approach has several advantages.
 It enables intuitive workflows.
@@ -169,6 +165,8 @@ This is especially useful when working with big data as well as **dplyr**'s data
 The main **dplyr** subsetting functions are `select()`, `slice()`, `filter()` and `pull()`.
 
 <div class="rmdnote">
+<!--jn:toDo-->
+<!-- improve it!! -->
 <p><strong>raster</strong> and <strong>dplyr</strong> packages have a function called <code>select()</code>. When using both packages, the function in the most recently attached package will be used, ‘masking’ the incumbent function. This can generate error messages containing text like: <code>unable to find an inherited method for function ‘select’ for signature ‘"sf"’</code>. To avoid this error message, and prevent ambiguity, we use the long-form function name, prefixed by the package name and two colons (usually omitted from R scripts for concise code): <code>dplyr::select()</code>.</p>
 </div>
 
@@ -269,15 +267,17 @@ world6 = filter(world, lifeExp > 82)
 The standard set of comparison operators can be used in the `filter()` function, as illustrated in Table \@ref(tab:operators): 
 
 
+
+
 Table: (\#tab:operators)Comparison operators that return Booleans (TRUE/FALSE).
 
-|Symbol             |Name                            |
-|:------------------|:-------------------------------|
-|`==`               |Equal to                        |
-|`!=`               |Not equal to                    |
-|`>`, `<`           |Greater/Less than               |
-|`>=`, `<=`         |Greater/Less than or equal      |
-|`&`, `&#124;`, `!` |Logical operators: And, Or, Not |
+|Symbol                        |Name                            |
+|:-----------------------------|:-------------------------------|
+|`==`                          |Equal to                        |
+|`!=`                          |Not equal to                    |
+|`>`, `<`                      |Greater/Less than               |
+|`>=`, `<=`                    |Greater/Less than or equal      |
+|`&`, <code>&#124;</code>, `!` |Logical operators: And, Or, Not |
 
 **dplyr** works well with the ['pipe'](http://r4ds.had.co.nz/pipes.html) operator `%>%`, which takes its name from the Unix pipe `|` [@grolemund_r_2016].
 It enables expressive code: the output of a previous function becomes the first argument of the next function, enabling *chaining*.
@@ -386,10 +386,6 @@ Table: (\#tab:continents)The top 3 most populous continents, and the number of c
 \BeginKnitrBlock{rmdnote}<div class="rmdnote">More details are provided in the help pages (which can be accessed via `?summarize` and `vignette(package = "dplyr")` and Chapter 5 of [R for Data Science](http://r4ds.had.co.nz/transform.html#grouped-summaries-with-summarize). </div>\EndKnitrBlock{rmdnote}
 
 ###  Vector attribute joining
-
-<!-- https://github.com/dgrtwo/fuzzyjoin -->
-<!-- http://r4ds.had.co.nz/relational-data.html -->
-<!-- non-unique keys -->
 
 Combining data from different sources is a common task in data preparation. 
 Joins do this by combining tables based on a shared 'key' variable.
@@ -616,23 +612,24 @@ class(world_data)
 ```
 
 ## Manipulating raster objects
+<!--jn-->
 
 In contrast to the vector data model underlying simple features (which represents points, lines and polygons as discrete entities in space), raster data represent continuous surfaces.
-This section shows how raster objects work by creating them *from scratch*, building on Section \@ref(an-introduction-to-raster).
+This section shows how raster objects work by creating them *from scratch*, building on Section \@ref(an-introduction-to-terra).
 Because of their unique structure, subsetting and other operations on raster datasets work in a different way, as demonstrated in Section \@ref(raster-subsetting).
 \index{raster!manipulation}
 
 The following code recreates the raster dataset used in Section \@ref(raster-classes), the result of which is illustrated in Figure \@ref(fig:cont-raster).
-This demonstrates how the `raster()` function works to create an example raster named `elev` (representing elevations).
+This demonstrates how the `rast()` function works to create an example raster named `elev` (representing elevations).
 
 
 ```r
-elev = raster(nrows = 6, ncols = 6, res = 0.5,
-              xmn = -1.5, xmx = 1.5, ymn = -1.5, ymx = 1.5,
-              vals = 1:36)
+elev = rast(nrows = 6, ncols = 6, resolution = 0.5, 
+            xmin = -1.5, xmax = 1.5, ymin = -1.5, ymax = 1.5,
+            vals = 1:36)
 ```
 
-The result is a raster object with 6 rows and 6 columns (specified by the `nrow` and `ncol` arguments), and a minimum and maximum spatial extent in x and y direction (`xmn`, `xmx`, `ymn`, `ymax`).
+The result is a raster object with 6 rows and 6 columns (specified by the `nrow` and `ncol` arguments), and a minimum and maximum spatial extent in x and y direction (`xmin`, `xmax`, `ymin`, `ymax`).
 The `vals` argument sets the values that each cell contains: numeric data ranging from 1 to 36 in this case.
 Raster objects can also contain categorical values of class `logical` or `factor` variables in R.
 The following code creates a raster representing grain sizes (Figure \@ref(fig:cont-raster)):
@@ -642,50 +639,34 @@ The following code creates a raster representing grain sizes (Figure \@ref(fig:c
 grain_order = c("clay", "silt", "sand")
 grain_char = sample(grain_order, 36, replace = TRUE)
 grain_fact = factor(grain_char, levels = grain_order)
-grain = raster(nrows = 6, ncols = 6, res = 0.5, 
-               xmn = -1.5, xmx = 1.5, ymn = -1.5, ymx = 1.5,
-               vals = grain_fact)
+grain = rast(nrows = 6, ncols = 6, resolution = 0.5, 
+             xmin = -1.5, xmax = 1.5, ymin = -1.5, ymax = 1.5,
+             vals = grain_fact)
 ```
 
 
 
-\BeginKnitrBlock{rmdnote}<div class="rmdnote">`raster` objects can contain values of class `numeric`, `integer`, `logical` or `factor`, but not `character`.
-To use character values, they must first be converted into an appropriate class, for example using the function `factor()`. 
-The `levels` argument was used in the preceding code chunk to create an ordered factor:
-clay < silt < sand in terms of grain size.
-See the Data structures chapter of @wickham_advanced_2014 for further details on classes.</div>\EndKnitrBlock{rmdnote}
-
-`raster` objects represent categorical variables as integers, so `grain[1, 1]` returns a number that represents a unique identifier, rather than "clay", "silt" or "sand". 
-The raster object stores the corresponding look-up table or "Raster Attribute Table" (RAT) as a data frame in a new slot named `attributes`, which can be viewed with `ratify(grain)` (see `?ratify()` for more information).
-Use the function `levels()` for retrieving and adding new factor levels to the attribute table:
+The raster object stores the corresponding look-up table or "Raster Attribute Table" (RAT) as a list of data frames, which can be viewed with `cats(grain)` (see `?cats()` for more information).
+Each element of this list is a layer of the raster.
+It is also possible to use the function `levels()` for retrieving and adding new or replacing existing factor levels:
 
 
 ```r
-levels(grain)[[1]] = cbind(levels(grain)[[1]], wetness = c("wet", "moist", "dry"))
+levels(grain)[[1]] = c(levels(grain)[[1]], wetness = c("wet", "moist", "dry"))
 levels(grain)
 #> [[1]]
-#>   ID VALUE wetness
-#> 1  1  clay     wet
-#> 2  2  silt   moist
-#> 3  3  sand     dry
-```
-
-This behavior demonstrates that raster cells can only possess one value, an identifier which can be used to look up the attributes in the corresponding attribute table (stored in a slot named `attributes`).
-This is illustrated by the command below, which returns the grain size and wetness of cell IDs 1, 11 and 35:
-
-
-```r
-factorValues(grain, grain[c(1, 11, 35)])
-#>   VALUE wetness
-#> 1  sand     dry
-#> 2  silt   moist
-#> 3  clay     wet
+#> [1] "clay"  "silt"  "sand"  "wet"   "moist" "dry"
 ```
 
 <div class="figure" style="text-align: center">
 <img src="03-attribute-operations_files/figure-html/cont-raster-1.png" alt="Raster datasets with numeric (left) and categorical values (right)." width="100%" />
 <p class="caption">(\#fig:cont-raster)Raster datasets with numeric (left) and categorical values (right).</p>
 </div>
+
+\BeginKnitrBlock{rmdnote}<div class="rmdnote">Categorical raster objects can also store information about the colors associated with each value using a color table.
+The color table is a data frame with three (red, green, blue) or four (alpha) columns, where each row relates to one value.
+Color tables in **terra** can be viewed or set with the `coltab()` function (see `?coltab`).
+Importantly, saving a raster object with a color table to a file (e.g., GeoTIFF) will also save the color information.</div>\EndKnitrBlock{rmdnote}
 
 ### Raster subsetting
 
@@ -712,30 +693,17 @@ elev[1, 1]
 elev[1]
 ```
 
-To extract all values or complete rows, you can use `values()` and `getValues()`.
-For multi-layered raster objects `stack` or `brick`, this will return the cell value(s) for each layer.
-For example, `stack(elev, grain)[1]` returns a matrix with one row and two columns --- one for each layer.
-For multi-layer raster objects another way to subset is with `raster::subset()`, which extracts layers from a raster stack or brick. The `[[` and `$` operators can also be used:
-
-
-```r
-r_stack = stack(elev, grain)
-names(r_stack) = c("elev", "grain")
-# three ways to extract a layer of a stack
-raster::subset(r_stack, "elev")
-r_stack[["elev"]]
-r_stack$elev
-```
+Subsetting of multi-layered raster objects will return the cell value(s) for each layer.
+For example, `c(elev, grain)[1]` returns a data frame with one row and two columns --- one for each layer.
+To extract all values or complete rows, you can also use `values()`.
 
 Cell values can be modified by overwriting existing values in conjunction with a subsetting operation.
-The following code chunk, for example, sets the upper left cell of `elev` to 0:
+The following code chunk, for example, sets the upper left cell of `elev` to 0 (results not shown):
 
 
 ```r
 elev[1, 1] = 0
 elev[]
-#>  [1]  0  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
-#> [26] 26 27 28 29 30 31 32 33 34 35 36
 ```
 
 Leaving the square brackets empty is a shortcut version of `values()` for retrieving all values of a raster.
@@ -743,23 +711,34 @@ Multiple cells can also be modified in this way:
 
 
 ```r
-elev[1, 1:2] = 0
+elev[1, c(1, 2)] = 0
+```
+
+Replacing values of multilayered rasters can be done with a matrix with as many columns as layers and rows as replaceable cells (results not shown):
+
+
+```r
+two_layers = c(grain, elev) 
+two_layers[1] = cbind(c(0), c(4))
+two_layers[]
 ```
 
 ### Summarizing raster objects
 
-**raster** contains functions for extracting descriptive statistics\index{statistics} for entire rasters.
+**terra** contains functions for extracting descriptive statistics\index{statistics} for entire rasters.
 Printing a raster object to the console by typing its name returns minimum and maximum values of a raster.
-`summary()` provides common descriptive statistics\index{statistics} (minimum, maximum, quartiles and number of `NA`s).
-Further summary operations such as the standard deviation (see below) or custom summary statistics can be calculated with `cellStats()`. 
+`summary()` provides common descriptive statistics\index{statistics} -- minimum, maximum, quartiles and number of `NA`s for continuous rasters and a number of cells of each class for categorical rasters.
+Further summary operations such as the standard deviation (see below) or custom summary statistics can be calculated with `global()`. 
 \index{raster!summarizing}
 
 
 ```r
-cellStats(elev, sd)
+global(elev, sd)
 ```
 
-\BeginKnitrBlock{rmdnote}<div class="rmdnote">If you provide the `summary()` and `cellStats()` functions with a raster stack or brick object, they will summarize each layer separately, as can be illustrated by running: `summary(brick(elev, grain))`.</div>\EndKnitrBlock{rmdnote}
+\BeginKnitrBlock{rmdnote}<div class="rmdnote">If you provide the `summary()` and `global()` functions with a multi-layered raster object, they will summarize each layer separately, as can be illustrated by running: `summary(c(elev, grain))`.</div>\EndKnitrBlock{rmdnote}
+
+Additionally, the `freq()` function allows to get the frequency table of categorical values.
 
 Raster value statistics can be visualized in a variety of ways.
 Specific functions such as `boxplot()`, `density()`, `hist()` and `pairs()` work also with raster objects, as demonstrated in the histogram created with the command below (not shown):
@@ -769,74 +748,78 @@ Specific functions such as `boxplot()`, `density()`, `hist()` and `pairs()` work
 hist(elev)
 ```
 
-In case a visualization function does not work with raster objects, one can extract the raster data to be plotted with the help of `values()` or `getValues()`.
+In case the desired visualization function does not work with raster objects, one can extract the raster data to be plotted with the help of `values()` (Section \@ref(raster-subsetting)).
 \index{raster!values}
 
 Descriptive raster statistics belong to the so-called global raster operations.
 These and other typical raster processing operations are part of the map algebra scheme, which are covered in the next chapter (Section \@ref(map-algebra)).
 
 <div class="rmdnote">
-<p>Some function names clash between packages (e.g., <code>select()</code>, as discussed in a previous note). In addition to not loading packages by referring to functions verbosely (e.g., <code>dplyr::select()</code>), another way to prevent function names clashes is by unloading the offending package with <code>detach()</code>. The following command, for example, unloads the <strong>raster</strong> package (this can also be done in the <em>package</em> tab which resides by default in the right-bottom pane in RStudio): <code>detach("package:raster", unload = TRUE, force = TRUE)</code>. The <code>force</code> argument makes sure that the package will be detached even if other packages depend on it. This, however, may lead to a restricted usability of packages depending on the detached package, and is therefore not recommended.</p>
+<p>Some function names clash between packages (e.g., a function with the name <code>extract()</code> exist in both <strong>terra</strong> and <strong>tidyr</strong> packages). In addition to not loading packages by referring to functions verbosely (e.g., <code>tidyr::extract()</code>), another way to prevent function names clashes is by unloading the offending package with <code>detach()</code>. The following command, for example, unloads the <strong>terra</strong> package (this can also be done in the <em>package</em> tab which resides by default in the right-bottom pane in RStudio): <code>detach("package:terra", unload = TRUE, force = TRUE)</code>. The <code>force</code> argument makes sure that the package will be detached even if other packages depend on it. This, however, may lead to a restricted usability of packages depending on the detached package, and is therefore not recommended.</p>
 </div>
 
 ## Exercises
 
+
 For these exercises we will use the `us_states` and `us_states_df` datasets from the **spData** package:
 
 
-```r
-library(spData)
-data(us_states)
-data(us_states_df)
-```
 
 `us_states` is a spatial object (of class `sf`), containing geometry and a few attributes (including name, region, area, and population) of states within the contiguous United States.
 `us_states_df` is a data frame (of class `data.frame`) containing the name and additional variables (including median income and poverty level, for the years 2010 and 2015) of US states, including Alaska, Hawaii and Puerto Rico.
 The data comes from the United States Census Bureau, and is documented in `?us_states` and `?us_states_df`.
 
-<!-- Attribute subsetting -->
-1. Create a new object called `us_states_name` that contains only the `NAME` column from the `us_states` object. 
-What is the class of the new object and what makes it geographic? <!--why there is a "sf" part? -->
-1. Select columns from the `us_states` object which contain population data.
+E1. Create a new object called `us_states_name` that contains only the `NAME` column from the `us_states` object. 
+What is the class of the new object and what makes it geographic?
+
+E2. Select columns from the `us_states` object which contain population data.
 Obtain the same result using a different command (bonus: try to find three ways of obtaining the same result).
 Hint: try to use helper functions, such as `contains` or `starts_with` from **dplyr** (see `?contains`).
-1. Find all states with the following characteristics (bonus find *and* plot them):
-    - Belong to the Midwest region.
-    - Belong to the West region, have an area below 250,000 km^2^ *and* in 2015 a population greater than 5,000,000 residents (hint: you may need to use the function `units::set_units()` or `as.numeric()`).
-    - Belong to the South region, had an area larger than 150,000 km^2^ or a total population in 2015 larger than 7,000,000 residents.
-<!-- Attribute aggregation -->
-1. What was the total population in 2015 in the `us_states` dataset?
+
+E3. Find all states with the following characteristics (bonus find *and* plot them):
+
+- Belong to the Midwest region.
+- Belong to the West region, have an area below 250,000 km^2^ *and* in 2015 a population greater than 5,000,000 residents (hint: you may need to use the function `units::set_units()` or `as.numeric()`).
+- Belong to the South region, had an area larger than 150,000 km^2^ or a total population in 2015 larger than 7,000,000 residents.
+
+E4. What was the total population in 2015 in the `us_states` dataset?
 What was the minimum and maximum total population in 2015?
-1. How many states are there in each region?
-1. What was the minimum and maximum total population in 2015 in each region?
+
+E5. How many states are there in each region?
+
+E6. What was the minimum and maximum total population in 2015 in each region?
 What was the total population in 2015 in each region?
-<!-- Attribute joining -->
-1. Add variables from `us_states_df` to `us_states`, and create a new object called `us_states_stats`.
+
+E7. Add variables from `us_states_df` to `us_states`, and create a new object called `us_states_stats`.
 What function did you use and why?
 Which variable is the key in both datasets?
 What is the class of the new object?
-1. `us_states_df` has two more rows than `us_states`.
+
+E8. `us_states_df` has two more rows than `us_states`.
 How can you find them? (hint: try to use the `dplyr::anti_join()` function)
-<!-- Attribute creation -->
-1. What was the population density in 2015 in each state?
+
+E9. What was the population density in 2015 in each state?
 What was the population density in 2010 in each state?
-1. How much has population density changed between 2010 and 2015 in each state?
+
+E10. How much has population density changed between 2010 and 2015 in each state?
 Calculate the change in percentages and map them.
-1. Change the columns' names in `us_states` to lowercase. (Hint: helper functions - `tolower()` and `colnames()` may help.)
-<!-- Mixed exercises -->
-<!-- combination of use of select, mutate, group_by, summarize, etc  -->
-1. Using `us_states` and `us_states_df` create a new object called `us_states_sel`.
+
+E11. Change the columns' names in `us_states` to lowercase. (Hint: helper functions - `tolower()` and `colnames()` may help.)
+
+E12. Using `us_states` and `us_states_df` create a new object called `us_states_sel`.
 The new object should have only two variables - `median_income_15` and `geometry`.
 Change the name of the `median_income_15` column to `Income`.
-1. Calculate the change in the number of residents living below the poverty level between 2010 and 2015 for each state. (Hint: See ?us_states_df for documentation on the poverty level columns.)
+
+E13. Calculate the change in the number of residents living below the poverty level between 2010 and 2015 for each state. (Hint: See ?us_states_df for documentation on the poverty level columns.)
 Bonus: Calculate the change in the *percentage* of residents living below the poverty level in each state.
-1. What was the minimum, average and maximum state's number of people living below the poverty line in 2015 for each region?
+
+E14. What was the minimum, average and maximum state's number of people living below the poverty line in 2015 for each region?
 Bonus: What is the region with the largest increase in people living below the poverty line?
-<!-- Raster exercises -->
-1. Create a raster from scratch with nine rows and columns and a resolution of 0.5 decimal degrees (WGS84).
+
+E15. Create a raster from scratch with nine rows and columns and a resolution of 0.5 decimal degrees (WGS84).
 Fill it with random numbers.
 Extract the values of the four corner cells. 
-1. What is the most common class of our example raster `grain` (hint: `modal()`)?
-1. Plot the histogram and the boxplot of the `data(dem, package = "spDataLarge")` raster. 
-<!-- 1. Now attach also `data(ndvi, package = "spDataLarge")`.  -->
-<!-- Create a raster stack using `dem` and `ndvi`, and make a `pairs()` plot. -->
+
+E16. What is the most common class of our example raster `grain` (hint: `modal()`)?
+
+E17. Plot the histogram and the boxplot of the `data(dem, package = "spDataLarge")` raster. 

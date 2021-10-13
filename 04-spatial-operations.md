@@ -7,9 +7,11 @@
 
 ```r
 library(sf)
-library(raster)
+library(terra)
 library(dplyr)
 library(spData)
+elev = rast(system.file("raster/elev.tif", package = "spData"))
+grain = rast(system.file("raster/grain.tif", package = "spData"))
 ```
 
 ## Introduction
@@ -59,6 +61,14 @@ The following code chunk first creates an object representing Canterbury, then u
 ```r
 canterbury = nz %>% filter(Name == "Canterbury")
 canterbury_height = nz_height[canterbury, ]
+```
+
+
+```
+#> Registered S3 methods overwritten by 'stars':
+#>   method             from
+#>   st_bbox.SpatRaster sf  
+#>   st_crs.SpatRaster  sf
 ```
 
 <div class="figure" style="text-align: center">
@@ -121,15 +131,6 @@ To explore these objects and spatial subsetting in more detail, see the suppleme
 
 ### Topological relations
 
-<!-- http://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html -->
-<!-- https://edzer.github.io/sfr/articles/sf3.html -->
-<!-- https://github.com/edzer/sfr/wiki/migrating#relevant-commands-exported-by-rgeos -->
-<!-- Relations and inverse relations -->
-<!-- http://desktop.arcgis.com/en/arcmap/latest/extensions/data-reviewer/types-of-spatial-relationships-that-can-be-validated.htm -->
-<!-- Topological relations: + difference between datatypes -->
-<!-- ?geos_binary_pred -->
-<!-- Distance relations -->
-<!-- Subset (1) points in polygons <-> (2) -->
 Topological relations describe the spatial relationships between objects.
 To understand them, it helps to have some simple test data to work with.
 Figure \@ref(fig:relation-objects) contains a polygon (`a`), a line (`l`) and some points (`p`), which are created in the code below.
@@ -242,90 +243,6 @@ You can learn more at https://www.r-spatial.org/r/2017/06/22/spatial-index.html.
 
 
 
-<!-- Equals: -->
-<!-- https://postgis.net/docs/ST_Equals.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_equals(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Contains: -->
-<!-- https://postgis.net/docs/ST_Contains.html -->
-<!-- https://postgis.net/docs/ST_ContainsProperly.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_contains(a, b, sparse = FALSE) -->
-<!-- st_contains_properly(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Covers: -->
-<!-- https://postgis.net/docs/ST_Covers.html -->
-<!-- https://postgis.net/docs/ST_CoveredBy.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_covers(a, b, sparse = FALSE) -->
-<!-- st_covered_by(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Within: -->
-<!-- https://postgis.net/docs/ST_Within.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_within(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Overlaps: -->
-<!-- https://postgis.net/docs/ST_Overlaps.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_overlaps(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Intersects: -->
-<!-- https://postgis.net/docs/ST_Intersects.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_intersects(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Disjoint: -->
-<!-- https://postgis.net/docs/ST_Disjoint.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_disjoint(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Touches: -->
-<!-- https://postgis.net/docs/ST_Touches.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_touches(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- Crosses: -->
-<!-- https://postgis.net/docs/ST_Crosses.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_crosses(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- DE9-IM - https://en.wikipedia.org/wiki/DE-9IM -->
-<!-- https://edzer.github.io/sfr/reference/st_relate.html -->
-
-<!-- ```{r, eval=FALSE} -->
-<!-- st_relate(a, b, sparse = FALSE) -->
-<!-- ``` -->
-
-<!-- examples (points/polygons) -->
-<!-- examples (points/lines) -->
-<!-- examples (lines/polygons) -->
-
-<!-- TODO? create a series of polygons distributed evenly over the surface of the Earth and clip them. -->
-<!-- set.seed(2018) -->
-<!-- blob_points = st_sample(x = world, size = 2) -->
-<!-- blobs = st_buffer(x = blob_points, dist = 1) -->
-<!-- plot(blobs) -->
-
 ### Spatial joining 
 
 Joining two non-spatial datasets relies on a shared 'key' variable, as described in Section \@ref(vector-attribute-joining).
@@ -354,10 +271,9 @@ random_points = random_df %>%
   st_set_crs(4326) # set geographic CRS
 ```
 
-<!-- This may seem a trivial question but if you consider being placed somewhere at random it would surely take some time to discover where you were and you'd probably have to ask someone. **comment - removed as it's too long-winded (RL)** -->
 The scenario is illustrated in Figure \@ref(fig:spatial-join).
 The `random_points` object (top left) has no attribute data, while the `world` (top right) does.
-The spatial join operation is done by `st_join()`, which adds the `name_long` variable to the points, resulting in `random_joined` which is illustrated in Figure \@ref(fig:spatial-join) (bottom left --- see [`04-spatial-join.R`](https://github.com/Robinlovelace/geocompr/blob/master/code/04-spatial-join.R)).
+The spatial join operation is done by `st_join()`, which adds the `name_long` variable to the points, resulting in `random_joined` which is illustrated in Figure \@ref(fig:spatial-join) (bottom left --- see [`04-spatial-join.R`](https://github.com/Robinlovelace/geocompr/blob/main/code/04-spatial-join.R)).
 Before creating the joined dataset, we use spatial subsetting to create `world_random`, which contains only countries that contain random points, to verify the number of country names returned in the joined dataset should be four (see the top right panel of Figure \@ref(fig:spatial-join)).
 
 
@@ -465,13 +381,6 @@ plot(cycle_hire_osm["capacity"])
 plot(z["capacity"])
 ```
 
-<!-- Nearest neighbour analysis -->
-<!-- e.g. two point's datasets (non-overlapping) -->
-<!-- e.g. two point's datasets (overlapping) -->
-<!-- ? topological problems of joining lines/polygons? -->
-<!-- joining different types (e.g. points + polygons = geometry) -> save as GPKG? -->
-<!-- `merge()`; `st_interpolate_aw()` -->
-
 The result of this join has used a spatial operation to change the attribute data associated with simple features;  the geometry associated with each feature has remained unchanged.
 
 ### Spatial data aggregation {#spatial-aggr}
@@ -553,12 +462,6 @@ This would be different for spatially intensive variables, which are independent
 In this case it is more meaningful to apply an average function when doing the aggregation instead of a sum function.
 To do so, one would only have to set the `extensive` parameter to `FALSE`.
 
-<!-- - `aggregate.sf()` - aggregate an sf object, possibly union-ing geometries -->
-<!-- - disaggregation?? `st_cast()` - https://github.com/edzer/sfr/wiki/migrating -->
-<!-- - `group_by()` + `summarise()` - potential errors -->
-<!-- - ? generalization **rmapsharper** - https://github.com/ateucher/rmapshaper -->
-<!-- `st_union` -->
-
 ### Distance relations 
 
 While topological relations are binary --- a feature either intersects with another or does not --- distance relations are continuous.
@@ -614,43 +517,47 @@ For the reader's convenience, these datasets can be also found in the **spData**
 
 The previous chapter (Section \@ref(manipulating-raster-objects)) demonstrated how to retrieve values associated with specific cell IDs or row and column combinations.
 Raster objects can also be extracted by location (coordinates) and other spatial objects.
-To use coordinates for subsetting, one can 'translate' the coordinates into a cell ID with the **raster** function `cellFromXY()`.
-An alternative is to use `raster::extract()` (be careful, there is also a function called `extract()` in the **tidyverse**\index{tidyverse (package)}) to extract values.
-Both methods are demonstrated below to find the value of the cell that covers a point located 0.1 units from the origin.
+To use coordinates for subsetting, one can 'translate' the coordinates into a cell ID with the **terra** function `cellFromXY()`.
+An alternative is to use `terra::extract()` (be careful, there is also a function called `extract()` in the **tidyverse**\index{tidyverse (package)}) to extract values.
+Both methods are demonstrated below to find the value of the cell that covers a point located at coordinates of 0.1, 0.1.
 \index{raster!subsetting}
 \index{spatial!subsetting}
 
 
 ```r
-id = cellFromXY(elev, xy = c(0.1, 0.1))
+id = cellFromXY(elev, xy = matrix(c(0.1, 0.1), ncol = 2))
 elev[id]
 # the same as
-raster::extract(elev, data.frame(x = 0.1, y = 0.1))
+terra::extract(elev, matrix(c(0.1, 0.1), ncol = 2))
 ```
 
-It is convenient that both functions also accept objects of class `Spatial* Objects`.
-Raster objects can also be subset with another raster object, as illustrated in Figure \@ref(fig:raster-subset) (left panel) and demonstrated in the code chunk below:
+<!--jn:toDo-->
+<!-- to update? -->
+<!-- It is convenient that both functions also accept objects of class `Spatial* Objects`. -->
+Raster objects can also be subset with another raster object, as demonstrated in the code chunk below:
 
 
 ```r
-clip = raster(xmn = 0.9, xmx = 1.8, ymn = -0.45, ymx = 0.45,
-              res = 0.3, vals = rep(1, 9))
+clip = rast(xmin = 0.9, xmax = 1.8, ymin = -0.45, ymax = 0.45,
+            resolution = 0.3, vals = rep(1, 9))
 elev[clip]
-#> [1] 18 24
+#>      elev
+#> [1,]   18
+#> [2,]   24
 # we can also use extract
-# extract(elev, extent(clip))
+# terra::extract(elev, ext(clip))
 ```
 
 Basically, this amounts to retrieving the values of the first raster (here: `elev`) falling within the extent of a second raster (here: `clip`).
 
 <div class="figure" style="text-align: center">
-<img src="figures/04_raster_subset.png" alt="Subsetting raster values with the help of another raster (left). Raster mask (middle). Output of masking a raster (right)." width="100%" />
-<p class="caption">(\#fig:raster-subset)Subsetting raster values with the help of another raster (left). Raster mask (middle). Output of masking a raster (right).</p>
+<img src="figures/04_raster_subset.png" alt="Original raster (left). Raster mask (middle). Output of masking a raster (right)." width="100%" />
+<p class="caption">(\#fig:raster-subset)Original raster (left). Raster mask (middle). Output of masking a raster (right).</p>
 </div>
 
 So far, the subsetting returned the values of specific cells, however, when doing spatial subsetting, one often also expects a spatial object as an output.
 To do this, we can use again the `[` when we additionally set the `drop` parameter to `FALSE`.
-To illustrate this, we retrieve the first two cells of `elev` as an individual raster object. 
+Let's illustrate this by retrieving the first two cells of `elev` as an individual raster object. 
 As mentioned in Section \@ref(manipulating-raster-objects), the `[` operator accepts various inputs to subset rasters and returns a raster object when `drop = FALSE`.
 The code chunk below subsets the `elev` raster by cell ID and row-column index with identical results: the first two cells on the top row (only the first 2 lines of the output is shown):
 
@@ -658,35 +565,41 @@ The code chunk below subsets the `elev` raster by cell ID and row-column index w
 ```r
 elev[1:2, drop = FALSE]    # spatial subsetting with cell IDs
 elev[1, 1:2, drop = FALSE] # spatial subsetting by row,column indices
-#> class       : RasterLayer 
-#> dimensions  : 1, 2, 2  (nrow, ncol, ncell)
+#> class       : SpatRaster 
+#> dimensions  : 1, 2, 1  (nrow, ncol, nlyr)
 #> ...
 ```
 
 
 
-
-Another common use case of spatial subsetting is when a raster with `logical` (or `NA`) values is used to mask another raster with the same extent and resolution, as illustrated in Figure \@ref(fig:raster-subset), middle and right panel.
-In this case, the `[`, `mask()` and `overlay()` functions can be used (results not shown):
+Another common use case of spatial subsetting is when a raster with `logical` (or `NA`) values is used to mask another raster with the same extent and resolution, as illustrated in Figure \@ref(fig:raster-subset).
+In this case, the `[` and `mask()` functions can be used (results not shown):
 
 
 ```r
 # create raster mask
-rmask = elev 
+rmask = elev
 values(rmask) = sample(c(NA, TRUE), 36, replace = TRUE)
-
-# spatial subsetting
-elev[rmask, drop = FALSE]           # with [ operator
-mask(elev, rmask)                   # with mask()
-overlay(elev, rmask, fun = "max")   # with overlay
 ```
-
-
-
 
 In the code chunk above, we have created a mask object called `rmask` with values randomly assigned to `NA` and `TRUE`.
 Next, we want to keep those values of `elev` which are `TRUE` in `rmask`.
 In other words, we want to mask `elev` with `rmask`.
+
+
+```r
+# spatial subsetting
+elev[rmask, drop = FALSE]           # with [ operator
+mask(elev, rmask)                   # with mask()
+```
+
+The above approach can be also used to replace some values (e.g., expected to be wrong) with NA. 
+
+
+```r
+elev[elev < 20] = NA
+```
+
 These operations are in fact Boolean local operations since we compare cell-wise two rasters.
 The next subsection explores these and related operations in more detail.
 
@@ -696,50 +609,32 @@ The next subsection explores these and related operations in more detail.
 Map algebra makes raster processing really fast.
 This is because raster datasets only implicitly store coordinates.
 To derive the coordinate of a specific cell, we have to calculate it using its matrix position and the raster resolution and origin.
-For the processing, however, the geographic position of a cell is barely relevant as long as we make sure that the cell position is still the same after the processing (one-to-one locational correspondence).
+For the processing, however, the geographic position of a cell is barely relevant as long as we make sure that the cell position is still the same after the processing.
 Additionally, if two or more raster datasets share the same extent, projection and resolution, one could treat them as matrices for the processing.
 This is exactly what map algebra is doing in R.
-First, the **raster** package checks the headers of the rasters on which to perform any algebraic operation, and only if they are correspondent to each other, the processing goes on.^[
-Map algebra operations are also possible with headerless rasters; in this case the user has to make sure that in fact there exists a one-to-one locational correspondence.
-An example showing how to import a headerless raster into R is provided in a post at https://stat.ethz.ch/pipermail/r-sig-geo/2013-May/018278.html.
-]
+First, the **terra** package checks the headers of the rasters on which to perform any algebraic operation, and only if they are correspondent to each other, the processing goes on.
 And secondly, map algebra retains the so-called one-to-one locational correspondence.
 This is where it substantially differs from matrix algebra which changes positions when for example multiplying or dividing matrices.
 
 Map algebra (or cartographic modeling) divides raster operations into four subclasses [@tomlin_geographic_1990], with each working on one or several grids simultaneously:
 
-1. *Local* or per-cell operations.
+1. *Local* or per-cell operations
 2. *Focal* or neighborhood operations.
-Most often the output cell value is the result of a 3 x 3 input cell block.
-3. *Zonal* operations are similar to focal operations, but the surrounding pixel grid on which new values are computed can have irregular sizes and shapes.
-<!-- sentence structure could be confusing in the sentence above -->
-4. *Global* or per-raster operations; that means the output cell derives its value potentially from one or several entire rasters.
+Most often the output cell value is the result of a 3 x 3 input cell block
+3. *Zonal* operations are similar to focal operations, but the surrounding pixel grid on which new values are computed can have irregular sizes and shapes
+4. *Global* or per-raster operations; that means the output cell derives its value potentially from one or several entire rasters
 
-This typology classifies map algebra operations by the number/shape of cells used for each pixel processing step.
-For the sake of completeness, we should mention that raster operations can also be classified by discipline such as terrain, hydrological analysis or image classification.
-The following sections explain how each type of map algebra operations can be used, with reference to worked examples (also see `vignette("Raster")` for a technical description of map algebra).
+This typology classifies map algebra operations by the number of cells used for each pixel processing step and the type of the output.
+For the sake of completeness, we should mention that raster operations can also be classified by discipline such as terrain, hydrological analysis, or image classification.
+The following sections explain how each type of map algebra operations can be used, with reference to worked examples.
 
 ### Local operations
 
 \index{map algebra!local operations}
 **Local** operations comprise all cell-by-cell operations in one or several layers.
-A good example is the classification of intervals of numeric values into groups such as grouping a digital elevation model into low (class 1), middle (class 2) and high elevations (class 3).
-Using the `reclassify()` command, we need first to construct a reclassification matrix, where the first column corresponds to the lower and the second column to the upper end of the class.
-The third column represents the new value for the specified ranges in column one and two.
-Here, we assign the raster values in the ranges 0--12, 12--24 and 24--36 are *reclassified* to take values 1, 2 and 3, respectively.
-
-
-```r
-rcl = matrix(c(0, 12, 1, 12, 24, 2, 24, 36, 3), ncol = 3, byrow = TRUE)
-recl = reclassify(elev, rcl = rcl)
-```
-
-We will perform several reclassifactions in Chapter \@ref(location).
-
-Raster algebra is another classical use case of local operations.
-This includes adding, subtracting and squaring two rasters.
+Raster algebra is a classical use case of local operations -- this includes adding or subtracting values from a raster, squaring and multipling rasters.
 Raster algebra also allows logical operations such as finding all raster cells that are greater than a specific value (5 in our example below).
-The **raster** package supports all these operations and more, as described in `vignette("Raster")` and demonstrated below (results not shown):
+The **terra** package supports all these operations and more, as demonstrated below (Figure \@ref(fig:04-local-operations)):
 
 
 ```r
@@ -749,9 +644,41 @@ log(elev)
 elev > 5
 ```
 
-Instead of arithmetic operators, one can also use the `calc()` and `overlay()` functions.
-These functions are more efficient, hence, they are preferable in the presence of large raster datasets. 
-Additionally, they allow you to directly store an output file.
+<div class="figure" style="text-align: center">
+<img src="figures/04-local-operations.png" alt="Examples of different local operations of the elev raster object: adding two rasters, squaring, applying logarithmic transformation, and performing a logical operation." width="100%" />
+<p class="caption">(\#fig:04-local-operations)Examples of different local operations of the elev raster object: adding two rasters, squaring, applying logarithmic transformation, and performing a logical operation.</p>
+</div>
+
+Another good example of local operations is the classification of intervals of numeric values into groups such as grouping a digital elevation model into low (class 1), middle (class 2) and high elevations (class 3).
+Using the `classify()` command, we need first to construct a reclassification matrix, where the first column corresponds to the lower and the second column to the upper end of the class.
+The third column represents the new value for the specified ranges in column one and two.
+
+
+```r
+rcl = matrix(c(0, 12, 1, 12, 24, 2, 24, 36, 3), ncol = 3, byrow = TRUE)
+rcl
+#>      [,1] [,2] [,3]
+#> [1,]    0   12    1
+#> [2,]   12   24    2
+#> [3,]   24   36    3
+```
+
+Here, we assign the raster values in the ranges 0--12, 12--24 and 24--36 are *reclassified* to take values 1, 2 and 3, respectively.
+
+
+```r
+recl = classify(elev, rcl = rcl)
+```
+
+The `classify()` function can be also used when we want to reduce the number of classes in our categorical rasters.
+We will perform several additional reclassifications in Chapter \@ref(location).
+
+Apart of arithmetic operators, one can also use the `app()`, `tapp()` and `lapp()` functions.
+They are more efficient, hence, they are preferable in the presence of large raster datasets. 
+Additionally, they allow you to save an output file directly.
+The `app()` function applies a function to each cell of a raster and is used to summarize (e.g., calculating the sum) the values of multiple layers into one layer.
+`tapp()` is an extension of `app()`, allowing us to select a subset of layers (see the `index` argument) for which we want to perform a certain operation.
+Finally, the `lapp()` function allows to apply a function to each cell using layers as arguments -- an application of `lapp()` is presented below.
 
 The calculation of the normalized difference vegetation index (NDVI) is a well-known local (pixel-by-pixel) raster operation.
 It returns a raster with values between -1 and 1; positive values indicate the presence of living plants (mostly > 0.2).
@@ -764,16 +691,52 @@ NDVI&= \frac{\text{NIR} - \text{Red}}{\text{NIR} + \text{Red}}\\
 \end{split}
 $$
 
+Let's calculate NDVI for the multispectral satellite file of the Zion National Park.
+
+
+```r
+multi_raster_file = system.file("raster/landsat.tif", package = "spDataLarge")
+multi_rast = rast(multi_raster_file)
+```
+
+The raster object has four satellite bands - blue, green, red, and near-infrared (NIR).
+Our next step should be to implement the NDVI formula into an R function:
+
+
+```r
+ndvi_fun = function(nir, red){
+  (nir - red) / (nir + red)
+}
+```
+
+This function accepts two numerical arguments, `nir` and `red`, and returns a numerical vector with NDVI values.
+It can be used as the `fun` argument of `lapp()`.
+We just need to remember that our function just needs two bands (not four from the original raster), and they need to be in the NIR, red order.
+That is why we subset the input raster with `multi_rast[[c(4, 3)]]` before doing any calculations.
+
+
+```r
+ndvi_rast = lapp(multi_rast[[c(4, 3)]], fun = ndvi_fun)
+```
+
+The result, shown on the right panel in Figure \@ref(fig:04-ndvi), can be compared to the RGB image of the same area (left panel of the same Figure).
+It allows us to see that the largest NDVI values are connected to areas of dense forest in the northern parts of the area, while the lowest values are related to the lake in the north and snowy mountain ridges.
+
+<div class="figure" style="text-align: center">
+<img src="figures/04-ndvi.png" alt="RGB image (left) and NDVI values (right) calculated for the example satellite file of the Zion National Park" width="100%" />
+<p class="caption">(\#fig:04-ndvi)RGB image (left) and NDVI values (right) calculated for the example satellite file of the Zion National Park</p>
+</div>
+
 Predictive mapping is another interesting application of local raster operations.
 The response variable corresponds to measured or observed points in space, for example, species richness, the presence of landslides, tree disease or crop yield.
 Consequently, we can easily retrieve space- or airborne predictor variables from various rasters (elevation, pH, precipitation, temperature, landcover, soil class, etc.).
-Subsequently, we model our response as a function of our predictors using `lm`, `glm`, `gam` or a machine-learning technique. 
+Subsequently, we model our response as a function of our predictors using `lm()`, `glm()`, `gam()` or a machine-learning technique. 
 Spatial predictions on raster objects can therefore be made by applying estimated coefficients to the predictor raster values, and summing the output raster values (see Chapter \@ref(eco)).
 
 ### Focal operations
 
 \index{map algebra!focal operations}
-While local functions operate on one cell, though possibly from multiple layers, **focal** operations take into account a central cell and its neighbors.
+While local functions operate on one cell, though possibly from multiple layers, **focal** operations take into account a central (focal) cell and its neighbors.
 The neighborhood (also named kernel, filter or moving window) under consideration is typically of size 3-by-3 cells (that is the central cell and its eight surrounding neighbors), but can take on any other (not necessarily rectangular) shape as defined by the user.
 A focal operation applies an aggregation function to all cells within the specified neighborhood, uses the corresponding output as the new value for the the central cell, and moves on to the next central cell (Figure \@ref(fig:focal-example)).
 Other names for this operation are spatial filtering and convolution [@burrough_principles_2015].
@@ -787,6 +750,9 @@ Here, we choose the minimum, but any other summary function, including `sum()`, 
 ```r
 r_focal = focal(elev, w = matrix(1, nrow = 3, ncol = 3), fun = min)
 ```
+
+<!--jn:toDo-->
+<!-- , na.rm=TRUE vs , na.rm=FALSE -->
 
 <div class="figure" style="text-align: center">
 <img src="figures/04_focal_example.png" alt="Input raster (left) and resulting output raster (right) due to a focal operation - finding the minimum value in 3-by-3 moving windows." width="100%" />
@@ -805,7 +771,7 @@ The line detection Laplace and Sobel filters might serve as an example here.
 Check the `focal()` help page for how to use them in R (this will also be used in the exercises at the end of this chapter).
 
 Terrain processing, the calculation of topographic characteristics such as slope, aspect and flow directions, relies on focal functions.
-`terrain()` can be used to calculate these metrics, although some terrain algorithms, including the Zevenbergen and Thorne method to compute slope, are not implemented in this **raster** function.
+`terrain()` can be used to calculate these metrics, although some terrain algorithms, including the Zevenbergen and Thorne method to compute slope, are not implemented in this **terra** function.
 Many other algorithms --- including curvatures, contributing areas and wetness indices --- are implemented in open source desktop geographic information system (GIS) software.
 Chapter \@ref(gis) shows how to access such GIS functionality from within R.
 
@@ -823,24 +789,24 @@ For example, to find the mean elevation for each grain size class (Figure \@ref(
 
 
 ```r
-z = zonal(elev, grain, fun = "mean") %>%
-  as.data.frame()
+z = zonal(elev, grain, fun = "mean")
 z
-#>   zone mean
-#> 1    1 17.8
-#> 2    2 18.5
-#> 3    3 19.2
+#>   grain elev
+#> 1  clay 14.8
+#> 2  silt 21.2
+#> 3  sand 18.7
 ```
 
-This returns the statistics\index{statistics} for each category, here the mean altitude for each grain size class, and can be added to the attribute table of the ratified raster (see previous chapter).
+This returns the statistics\index{statistics} for each category, here the mean altitude for each grain size class.^[It is also possible to get a raster with calculated statistics for each zone by setting the `as.raster` argument to `TRUE`.]
 
 ### Global operations and distances
 
 *Global* operations are a special case of zonal operations with the entire raster dataset representing a single zone.
-The most common global operations are descriptive statistics\index{statistics} for the entire raster dataset such as the minimum or maximum (see Section \@ref(summarizing-raster-objects)).
+The most common global operations are descriptive statistics\index{statistics} for the entire raster dataset such as the minimum or maximum -- we already discussed those in Section \@ref(summarizing-raster-objects).
+
 Aside from that, global operations are also useful for the computation of distance and weight rasters.
 In the first case, one can calculate the distance from each cell to a specific target cell.
-For example, one might want to compute the distance to the nearest coast (see also `raster::distance()`).
+For example, one might want to compute the distance to the nearest coast (see also `terra::distance()`).
 We might also want to consider topography, that means, we are not only interested in the pure distance but would like also to avoid the crossing of mountain ranges when going to the coast.
 To do so, we can weight the distance with elevation so that each additional altitudinal meter 'prolongs' the Euclidean distance.
 Visibility and viewshed computations also belong to the family of global operations (in the exercises of Chapter \@ref(gis), you will compute a viewshed raster).
@@ -848,7 +814,7 @@ Visibility and viewshed computations also belong to the family of global operati
 ### Map algebra counterparts in vector processing
 
 Many map algebra operations have a counterpart in vector processing [@liu_essential_2009].
-Computing a distance raster (zonal operation) while only considering a maximum distance (logical focal operation) is the equivalent to a vector buffer operation (Section \@ref(clipping)).
+Computing a distance raster (global operation) while only considering a maximum distance (logical focal operation) is the equivalent to a vector buffer operation (Section \@ref(clipping)).
 Reclassifying raster data (either local or zonal function depending on the input) is equivalent to dissolving vector data (Section \@ref(spatial-joining)). 
 Overlaying two rasters (local operation), where one contains `NULL` or `NA` values representing a mask, is similar to vector clipping (Section \@ref(clipping)).
 Quite similar to spatial clipping is intersecting two layers (Section \@ref(spatial-subsetting)). 
@@ -864,91 +830,70 @@ Zonal operations can dissolve the cells of one raster in accordance with the zon
 
 \index{raster!merge}
 Suppose we would like to compute the NDVI (see Section \@ref(local-operations)), and additionally want to compute terrain attributes from elevation data for observations within a study area.
-Such computations rely on remotely sensed information.
-The corresponding imagery is often divided into scenes covering a specific spatial extent.
-Frequently, a study area covers more than one scene.
-In these cases we would like to merge the scenes covered by our study area. 
+Such computations rely on remotely sensed information. 
+The corresponding imagery is often divided into scenes covering a specific spatial extent, and frequently, a study area covers more than one scene.
+Then, we would need to merge the scenes covered by our study area. 
 In the easiest case, we can just merge these scenes, that is put them side by side.
-This is possible with digital elevation data (SRTM, ASTER).
-In the following code chunk we first download the SRTM elevation data for Austria and Switzerland (for the country codes, see the **raster** function `ccodes()`).
+This is possible, for example, with digital elevation data (SRTM, ASTER).
+In the following code chunk we first download the SRTM elevation data for Austria and Switzerland (for the country codes, see the **geodata** function `country_codes()`).
 In a second step, we merge the two rasters into one.
 
 
 ```r
-aut = getData("alt", country = "AUT", mask = TRUE)
-ch = getData("alt", country = "CHE", mask = TRUE)
+aut = geodata::elevation_30s(country = "AUT", path = tempdir())
+ch = geodata::elevation_30s(country = "CHE", path = tempdir())
 aut_ch = merge(aut, ch)
 ```
 
-**Raster**'s `merge()` command combines two images, and in case they overlap, it uses the value of the first raster.
-You can do exactly the same with `gdalUtils::mosaic_rasters()` which is faster, and therefore recommended if you have to merge a multitude of large rasters stored on disk.
+**terra**'s `merge()` command combines two images, and in case they overlap, it uses the value of the first raster.
+<!--jn:toDo-->
+<!-- gdalUtils is slower (for this files): -->
+<!-- two_rast = c(terra::sources(aut)$source, terra::sources(ch)$source) -->
+<!-- tf = tempfile(fileext = ".tif") -->
+<!-- bench::mark({gdalUtils::mosaic_rasters(two_rast, tf)}) -->
+<!-- You can do exactly the same with `gdalUtils::mosaic_rasters()` which is faster, and therefore recommended if you have to merge a multitude of large rasters stored on disk. -->
 
 The merging approach is of little use when the overlapping values do not correspond to each other.
 This is frequently the case when you want to combine spectral imagery from scenes that were taken on different dates.
 The `merge()` command will still work but you will see a clear border in the resulting image.
-The `mosaic()` command lets you define a function for the overlapping area. 
-For instance, we could compute the mean value. 
-This might smooth the clear border in the merged result but it will most likely not make it disappear.
+On the other hand, the `mosaic()` command lets you define a function for the overlapping area. 
+For instance, we could compute the mean value -- this might smooth the clear border in the merged result but it will most likely not make it disappear.
 To do so, we need a more advanced approach. 
 Remote sensing scientists frequently apply histogram matching or use regression techniques to align the values of the first image with those of the second image.
-The packages **landsat** (`histmatch()`, `relnorm()`, `PIF()`), **satellite** (`calcHistMatch()`) and **RStoolbox** (`histMatch()`, `pifMatch()`) provide the corresponding functions.
+The packages **landsat** (`histmatch()`, `relnorm()`, `PIF()`), **satellite** (`calcHistMatch()`) and **RStoolbox** (`histMatch()`, `pifMatch()`) provide the corresponding functions for the **raster**'s package objects.
 For a more detailed introduction on how to use R for remote sensing, we refer the reader to @wegmann_remote_2016.
-
-<!-- ## Spatial data creation -->
-
-<!-- where should "area" example be? in this or the previous chapter? -->
-<!-- Not here - I think this chapter should focus on geomtry data -->
-<!-- `st_centroid()` -->
-<!-- `st_buffer()` -->
-<!-- http://r-spatial.org//r/2017/06/09/mapedit_0-2-0.html -->
-
-<!-- Commented out - think this would be better in c3 (RL) -->
-<!-- ```{r} -->
-<!-- # add a new column -->
-<!-- africa$area = set_units(st_area(africa), value = km^2) -->
-<!-- africa$pop_density = africa$pop / africa$area -->
-
-<!-- # OR -->
-<!-- africa = africa %>% -->
-<!--         mutate(area = set_units(st_area(.), value = km^2)) %>% -->
-<!--         mutate(pop_density = pop / area) -->
-<!-- ``` -->
-
-<!-- Note that this has created a attributes for the area and population density variables: -->
-
-<!-- ```{r} -->
-<!-- attributes(africa$area) -->
-<!-- attributes(africa$pop_density) -->
-<!-- ``` -->
-
-<!-- These can be set to `NULL` as follows: -->
-
-<!-- ```{r} -->
-<!-- attributes(africa$area) = NULL -->
-<!-- attributes(africa$pop_density) = NULL -->
-<!-- ``` -->
-
-<!-- ## Spatial data transformation -->
-<!-- changes classes; polygonize, etc-->
+<!--jn:toDo-->
+<!--update the above reference to the 2nd edition-->
 
 ## Exercises
 
-1. It was established in Section \@ref(spatial-vec) that Canterbury was the region of New Zealand containing most of the 100 highest points in the country.
+
+E1. It was established in Section \@ref(spatial-vec) that Canterbury was the region of New Zealand containing most of the 100 highest points in the country.
 How many of these high points does the Canterbury region contain?
 
-1. Which region has the second highest number of `nz_height` points in, and how many does it have?
 
-1. Generalizing the question to all regions: how many of New Zealand's 16 regions contain points which belong to the top 100 highest points in the country? Which regions?
-    - Bonus: create a table listing these regions in order of the number of points and their name.
 
-1. Use `data(dem, package = "spDataLarge")`, and reclassify the elevation in three classes: low, medium and high.
+E2. Which region has the second highest number of `nz_height` points in, and how many does it have?
+
+
+
+E3. Generalizing the question to all regions: how many of New Zealand's 16 regions contain points which belong to the top 100 highest points in the country? Which regions?
+
+- Bonus: create a table listing these regions in order of the number of points and their name.
+
+
+
+E4. Use `data(dem, package = "spDataLarge")`, and reclassify the elevation in three classes: low, medium and high.
 Secondly, attach the NDVI raster (`data(ndvi, package = "spDataLarge")`) and compute the mean NDVI and the mean elevation for each altitudinal class.
-1. Apply a line detection filter to `raster(system.file("external/rlogo.grd", package = "raster"))`.
+
+E5. Apply a line detection filter to `raster(system.file("external/rlogo.grd", package = "raster"))`.
 Plot the result.
 Hint: Read `?raster::focal()`.
-1. Calculate the NDVI of a Landsat image. 
-Use the Landsat image provided by the **spDataLarge** package (`system.file("raster/landsat.tif", package="spDataLarge")`).
-1. A StackOverflow [post](https://stackoverflow.com/questions/35555709/global-raster-of-geographic-distances) shows how to compute distances to the nearest coastline using `raster::distance()`.
+
+E6. Calculate the NDVI of a Landsat image. 
+Use the Landsat image provided by the **spDataLarge** package (`system.file("raster/landsat.tif", package = "spDataLarge")`).
+
+E7. A StackOverflow [post](https://stackoverflow.com/questions/35555709/global-raster-of-geographic-distances) shows how to compute distances to the nearest coastline using `raster::distance()`.
 Retrieve a digital elevation model of Spain, and compute a raster which represents distances to the coast across the country (hint: use `getData()`).
 Second, use a simple approach to weight the distance raster with elevation (other weighting approaches are possible, include flow direction and steepness); every 100 altitudinal meters should increase the distance to the coast by 10 km.
 Finally, compute the difference between the raster using the Euclidean distance and the raster weighted by elevation.
