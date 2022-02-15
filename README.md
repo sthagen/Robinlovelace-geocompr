@@ -24,11 +24,63 @@ Muenchow](https://github.com/jannes-m):
 > Lovelace, Robin, Jakub Nowosad and Jannes Muenchow (2019).
 > Geocomputation with R. The R Series. CRC Press.
 
-This book has been published by [CRC
+The first version of the book has been published by [CRC
 Press](https://www.crcpress.com/9781138304512) in the [R
-Series](https://www.routledge.com/Chapman--HallCRC-The-R-Series/book-series/CRCTHERSER).
-The online version of this book is free to read at
-<https://geocompr.robinlovelace.net/>.
+Series](https://www.routledge.com/Chapman--HallCRC-The-R-Series/book-series/CRCTHERSER)
+and can be viewed online at
+[bookdown.org](https://bookdown.org/robinlovelace/geocompr/). Read the
+latest version at
+[geocompr.robinlovelace.net](https://geocompr.robinlovelace.net/).
+
+### Note: we are actively working on the Second Edition 🏗
+
+Since commencing work on the Second Edition in September 2021 much has
+changed, including:
+
+-   Replacement of `raster` with `terra` in Chapters 1 to 7 (see commits
+    related to this update
+    [here](https://github.com/Robinlovelace/geocompr/search?q=terra&type=commits))
+-   Update of Chapter 7 to include mention alternative ways or
+    reading-in OSM data in
+    [#656](https://github.com/Robinlovelace/geocompr/pull/656)
+-   Refactor build settings so the book builds on Docker images in the
+    [geocompr/docker](https://github.com/geocompr/docker) repo
+-   Improve the experience of using the book in Binder (ideal for trying
+    out the code before installing or updating the necessary R
+    packages), as documented in issue
+    [#691](https://github.com/Robinlovelace/geocompr/issues/691) (thanks
+    to [yuvipanda](https://github.com/yuvipanda))
+-   Improved communication of binary spatial predicates in Chapter 4
+    (see [#675](https://github.com/Robinlovelace/geocompr/pull/675))
+-   New section on the links between subsetting and clipping (see
+    [#698](https://github.com/Robinlovelace/geocompr/pull/698)) in
+    Chapter 5
+-   New
+    [section](https://geocompr.robinlovelace.net/spatial-operations.html#de-9im-strings)
+    on the dimensionally extended 9 intersection model (DE-9IM)
+-   New [chapter](https://geocompr.robinlovelace.net/raster-vector.html)
+    on raster-vector interactions split out from Chapter 5
+-   New
+    [section](https://geocompr.robinlovelace.net/spatial-class.html#the-sfheaders-package)
+    on the **sfheaders** package
+-   New
+    [section](https://geocompr.robinlovelace.net/spatial-class.html#s2)
+    in Chapter 2 on spherical geometry engines and the **s2** package
+    <!-- Todo: update this bullet point (Rl 2021-11) -->
+    <!-- - Next issue  -->
+
+<!-- Todo: add news file? (RL 2021-11) -->
+<!-- See NEWS.md for a summary of the changes. -->
+
+See
+[https://github.com/Robinlovelace/geocompr/compare/1.9…main](https://github.com/Robinlovelace/geocompr/compare/1.9...main#files_bucket)
+for a continuously updated summary of the changes to date. At the time
+of writing (November 2021) there have been around 6k lines added and 6k
+lines removed, lots of refactoring!
+
+[![](https://user-images.githubusercontent.com/1825120/140612663-e62566a2-62ab-4a22-827a-e86f5ce7bd63.png)](https://github.com/Robinlovelace/geocompr/compare/1.9...main)
+
+Contributions at this stage are very welcome.
 
 ## Contributing
 
@@ -50,10 +102,13 @@ will update automatically): [prosoitos](https://github.com/prosoitos),
 [florisvdh](https://github.com/florisvdh),
 [katygregg](https://github.com/katygregg),
 [rsbivand](https://github.com/rsbivand),
+[iod-ine](https://github.com/iod-ine),
 [KiranmayiV](https://github.com/KiranmayiV),
 [zmbc](https://github.com/zmbc),
 [erstearns](https://github.com/erstearns),
+[dcooley](https://github.com/dcooley),
 [MikeJohnPage](https://github.com/MikeJohnPage),
+[defuneste](https://github.com/defuneste),
 [eyesofbambi](https://github.com/eyesofbambi),
 [nickbearman](https://github.com/nickbearman),
 [tyluRp](https://github.com/tyluRp),
@@ -63,15 +118,16 @@ will update automatically): [prosoitos](https://github.com/prosoitos),
 [LaurieLBaker](https://github.com/LaurieLBaker),
 [MarHer90](https://github.com/MarHer90),
 [mdsumner](https://github.com/mdsumner),
-[pat-s](https://github.com/pat-s), [gisma](https://github.com/gisma),
+[pat-s](https://github.com/pat-s),
+[darrellcarvalho](https://github.com/darrellcarvalho),
+[e-clin](https://github.com/e-clin), [gisma](https://github.com/gisma),
 [ateucher](https://github.com/ateucher),
 [annakrystalli](https://github.com/annakrystalli),
-[DarrellCarvalho](https://github.com/DarrellCarvalho),
 [kant](https://github.com/kant),
 [gavinsimpson](https://github.com/gavinsimpson),
-[Henrik-P](https://github.com/Henrik-P),
 [Himanshuteli](https://github.com/Himanshuteli),
 [yutannihilation](https://github.com/yutannihilation),
+[jimr1603](https://github.com/jimr1603),
 [jbixon13](https://github.com/jbixon13),
 [olyerickson](https://github.com/olyerickson),
 [yvkschaefer](https://github.com/yvkschaefer),
@@ -86,6 +142,7 @@ will update automatically): [prosoitos](https://github.com/prosoitos),
 [yihui](https://github.com/yihui),
 [chihinl](https://github.com/chihinl),
 [cshancock](https://github.com/cshancock),
+[ec-nebi](https://github.com/ec-nebi),
 [gregor-d](https://github.com/gregor-d),
 [jasongrahn](https://github.com/jasongrahn),
 [p-kono](https://github.com/p-kono),
