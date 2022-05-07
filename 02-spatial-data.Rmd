@@ -5,11 +5,13 @@
 ## Prerequisites {-}
 
 This is the first practical chapter of the book, and therefore it comes with some software requirements.
-We assume that you have an up-to-date version of R installed and that you are comfortable using software with a command-line interface such as the integrated development environment (IDE) RStudio.
-<!--or VSCode?-->
+You need to have access to a computer with R (version [4.2.0](https://stat.ethz.ch/pipermail/r-announce/2022/000683.html released April 2022 or greater) installed.
+We highly recommend not only reading the text but also *running the code* in each chapter to build your geocomputational skills.
+To do this, create a new folder on your computer to save your notes in R scripts as you go.
+You can [download](https://github.com/Robinlovelace/geocompr/archive/refs/heads/main.zip) or [clone](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) the source code underlying the book from [github.com/robinlovelace/geocompr](https://github.com/Robinlovelace/geocompr) to support your learning.
+After you have set-up a place to save your work start running/editing/testing code using an integrated development environment (IDE) such as [RStudio](https://www.rstudio.com/products/rstudio/download/#download) (recommended for most people, especially beginners) or [VS Code](https://github.com/REditorSupport/vscode-R)).
 
-<!-- Should we update these references to more up-to-date resources? -->
-If you are new to R, we recommend reading Chapter 2 of the online book *Efficient R Programming* by @gillespie_efficient_2016 and learning the basics of the language with reference to resources such as @grolemund_r_2016.
+If you are new to R, we recommend following introductory R resources such as [Hands on Programming with R](https://rstudio-education.github.io/hopr/starting.html) which covers installation and how R works.
 Organize your work (e.g., with RStudio projects) and give scripts sensible names such as `02-chapter.R` to document the code you write as you learn.
 \index{R!pre-requisites}
 
@@ -133,7 +135,7 @@ Simple Features is a hierarchical data model that represents a wide range of geo
 Of 18 geometry types supported by the specification, only 7 are used in the vast majority of geographic research (see Figure \@ref(fig:sf-ogc));
 these core geometry types are fully supported by the R package **sf** [@pebesma_simple_2018].^[
 The full OGC standard includes rather exotic geometry types including 'surface' and 'curve' geometry types, which currently have limited application in real world applications.
-All 18 types can be represented with the **sf** package, although (as of summer 2018) plotting only works for the 'core 7'.
+All 18 types can be represented with the **sf** package, although at the time of writing (2022) plotting only works for the 'core 7'.
 ]
 
 ```{r sf-ogc, fig.cap="Simple feature types fully supported by sf.", out.width="60%", echo=FALSE}
