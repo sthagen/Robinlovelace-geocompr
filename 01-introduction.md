@@ -53,8 +53,9 @@ Our approach differs from early adopters such as Stan Openshaw, however, in its 
 At the turn of the 21^st^ Century, it was unrealistic to expect readers to be able to reproduce code examples, due to barriers preventing access to the necessary hardware, software and data.
 Fast-forward two decades and things have progressed rapidly.
 Anyone with access to a laptop with ~4GB RAM can realistically expect to be able to install and run software for geocomputation on publicly accessible datasets, which are more widely available than ever before (as we will see in Chapter \@ref(read-write)).^[
-A laptop with 4GB running a modern operating system such as Ubuntu 16.04 onward should also be able to reproduce the contents of this book.
-A laptop with this specification or above can be acquired second-hand for ~US$100 in many countries nowadays, reducing the financial/hardware barrier to geocomputation far below the levels in operation in the early 2000s, when high-performance computers were unaffordable for most people.
+A laptop with 4GB running a modern operating system such as Ubuntu 22.04 onward should also be able to reproduce the contents of this book.
+A laptop with this specification or above can be acquired second-hand for ~US$100 in most countries today.
+Financial and hardware barriers to geocomputation that existed in 1990s and early 2000s, when high-performance computers were unaffordable for most people, have now been removed.
 ]
 Unlike early works in the field, all the work presented in this book is reproducible using code and example data supplied alongside the book, in R\index{R} packages such as **spData**, the installation of which is covered in Chapter \@ref(spatial-class).
 
@@ -217,8 +218,8 @@ Multiple places reflect the immense interest in **sf**.
 This is especially true for the [R-sig-Geo Archives](https://stat.ethz.ch/pipermail/r-sig-geo/), a long-standing open access email list containing much R-spatial wisdom accumulated over the years.
 
 <div class="figure" style="text-align: center">
-<img src="figures/01-cranlogs.png" alt="Downloads of selected R packages for working with geographic data. The y-axis shows average number of downloads per day, within a 91-day rolling window." width="100%" />
-<p class="caption">(\#fig:cranlogs)Downloads of selected R packages for working with geographic data. The y-axis shows average number of downloads per day, within a 91-day rolling window.</p>
+<img src="figures/01-cranlogs.png" alt="Downloads of selected R packages for working with geographic data from early 2013 to present. The y axis shows the average number of dailly downloads from the popular cloud.r-project.org CRAN mirror with a 91-day rolling window (log scale)." width="100%" />
+<p class="caption">(\#fig:cranlogs)Downloads of selected R packages for working with geographic data from early 2013 to present. The y axis shows the average number of dailly downloads from the popular cloud.r-project.org CRAN mirror with a 91-day rolling window (log scale).</p>
 </div>
 
 It is noteworthy that shifts in the wider R community, as exemplified by the data processing package **dplyr** (released in [2014](https://cran.r-project.org/src/contrib/Archive/dplyr/)) influenced shifts in R's spatial ecosystem. 
@@ -318,21 +319,21 @@ It was followed by the **ggmap** package that added similar 'basemap' tiles capa
 Though **ggmap** facilitated map-making with **ggplot2**, its utility was limited by the need to `fortify` spatial objects, which means converting them into long data frames.
 While this works well for points it is computationally inefficient for lines and polygons, since each coordinate (vertex) is converted into a row, leading to huge data frames to represent complex geometries.
 Although geographic visualization tended to focus on vector data, raster visualization is supported in **raster** and received a boost with the release of **rasterVis**, which is described in a book on the subject of spatial and temporal data visualization [@lamigueiro_displaying_2018].
-As of 2018 map making in R is a hot topic with dedicated packages such as **tmap**, **leaflet** and **mapview** all supporting the class system provided by **sf**, the focus of the next chapter (see Chapter \@ref(adv-map) for more on visualization).
+Since then map making in R has become a hot topic, with dedicated packages such as **tmap**, **leaflet**, **rayshader** and **mapview** gaining popularity, as highlighted in Chapter \@ref(adv-map).
 
-Since 2018, a movement of modernizing basic R packages related to handling spatial data has continued. 
+Since 2018, when the First Edition of Geocomputation with R was published, the development of geographic R packages has accelerated. 
 \index{terra (package)}
-**terra** -- a successor of the **raster** package aimed at better performance and more straightforward user interface was firstly released (see Chapter \@ref(raster-data)) in 2020 [@hijmans_terra_2021].
-In mid-2021, a significant change was made to the **sf** package by incorporating spherical geometry calculations.
-Since this change, by default, many spatial operations on data with geographic CRSs apply the C++ s2geometry library's spherical geometry algorithms, while these types of operations on data with projected CRSs are still using GEOS.
-<!--toDo:rl-->
-<!--add reference to the section about spherical geometry in sf -->
-New ideas about spatial data representations were also being developed in this period. 
+**terra**, a successor of the **raster** package, was firstly released in 2020 [@hijmans_terra_2021], bringing several benefits to R users working with raster datasets: it  is faster and has more a straightforward user interface than its predecessor, as described in Section \@ref(raster-data).
+
+In mid-2021, a substantial (and in some cases breaking) change was made to the **sf** package by incorporating spherical geometry calculations.
+Since then, by default, many spatial operations on data with geographic CRSs use the S2 spherical geometry engine as a back-end, as described in Section \@ref(s2).
+Additional ways of representing and working with geographic data in R since 2018 also include the **stars** and **lidR** packages.
+**stars**, which integrates closely with **sf**, handles raster and vector data cubes [@pebesma_stars_2021].
+**lidR** processes of airborne LiDAR (Light Detection and Ranging) point clouds [@Roussel2020].
 \index{stars (package)}
 \index{lidR (package)}
-It includes the **stars** package, closely connected to **sf**, for handling raster and vector data cubes [@pebesma_stars_2021] and **lidR** for processing of airborne LiDAR (Light Detection and Ranging) point clouds [@Roussel2020].
 
-This modernization had several reasons, including the emergence of new technologies and standard, and the impacts from spatial software development outside of the R environment [@bivand_progress_2021].
+This modernization had several motivations, including the emergence of new technologies and standard, and the impacts from spatial software development outside of the R environment [@bivand_progress_2021].
 The most important external factor affecting most spatial software, including R spatial packages, were the major updates, including many breaking changes to the PROJ library\index{PROJ} that had begun in 2018.
 Most importantly, these changes forced the replacement of `proj4string` to `WKT` representation for storage of coordinate reference systems and coordinates operations (learn more in Section \@ref(crs-intro) and Chapter \@ref(reproj-geo-data)).
 
@@ -367,9 +368,7 @@ E1. Think about the terms 'GIS'\index{GIS}, 'GDS' and 'geocomputation' described
 
 E2. Provide three reasons for using a scriptable language such as R for geocomputation instead of using a graphical user interface (GUI) based GIS such as QGIS\index{QGIS}.
 
-E3. Think about a real world problem you would like to solve with geographic data that could help people living in your local area and sketch a map of the geographic processes involved.
-
-E4. Consider the datasets needed to represent the problem computationally and sketch a workflow for processing them, resulting in outputs that could help inform decision making related to the problem you thought of in the previous exercise. Use a pen and paper or a digital sketching tool such as Excalidraw.
+E3. In the year 2000 Stan Openshaw wrote that geocomputation involved "practical work that is beneficial or useful" to others. Think about a practical problem and possible solutions that could be informed with new evidence derived from the analysis, visualisation or modelling of geographic data. With a pen and paper (or computational equivalent) sketch inputs and possible outputs illustrating how geocomputation could help.
 
 <!--toDo: rl -->
 <!--add solutions!-->
