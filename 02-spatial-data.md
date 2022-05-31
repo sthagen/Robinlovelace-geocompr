@@ -648,9 +648,9 @@ st_multipolygon(multipolygon_list)
 
 ```r
 ## GEOMETRYCOLLECTION
-gemetrycollection_list = list(st_multipoint(multipoint_matrix),
+geometrycollection_list = list(st_multipoint(multipoint_matrix),
                               st_linestring(linestring_matrix))
-st_geometrycollection(gemetrycollection_list)
+st_geometrycollection(geometrycollection_list)
 #> GEOMETRYCOLLECTION (MULTIPOINT (5 2, 1 3, 3 4, 3 2),
 #>   LINESTRING (1 5, 4 4, 4 1, 2 2, 3 2))
 ```
@@ -1082,7 +1082,9 @@ nlyr(multi_rast)
 #> [1] 4
 ```
 
-For multi-layer raster objects, layers can be selected with `terra::subset()`.^[The `[[` and `$` operators can also be used for layers' selection.]
+For multi-layer raster objects, layers can be selected with `terra::subset()`.^[
+The `[[` and `$` operators can also be used to select layers, for example with commands `multi_rast$landsat_1` and `multi_rast[["landsat_1"]]`.
+]
 It accepts a layer number or its name as the second argument:
 
 
