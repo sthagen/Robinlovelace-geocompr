@@ -124,7 +124,7 @@ This is especially true for <em>vector</em> operations: Section <a href="attr.ht
 Spatial joining (Section <a href="spatial-operations.html#spatial-joining">4.2.4</a>) and aggregation (Section <a href="spatial-operations.html#spatial-aggr">4.2.6</a>) also have non-spatial counterparts, covered in the previous chapter.</p>
 <p>Spatial operations differ from non-spatial operations in a number of ways, however:
 Spatial joins, for example, can be done in a number of ways — including matching entities that intersect with or are within a certain distance of the target dataset — while the attribution joins discussed in Section <a href="attr.html#vector-attribute-joining">3.2.4</a> in the previous chapter can only be done in one way (except when using fuzzy joins, as described in the documentation of the <a href="https://cran.r-project.org/package=fuzzyjoin"><strong>fuzzyjoin</strong></a> package).
-The <em>type</em> of spatial relationship between objects must be considered when undertaking spatial operations, as described in Section <a href="spatial-operations.html#topological-relations">4.2.2</a>, on topological relations between vector features.
+Different <em>types</em> of spatial relationship between objects, including intersects and disjoint, are described in Section <a href="spatial-operations.html#topological-relations">4.2.2</a>.
 
 Another unique aspect of spatial objects is distance: all spatial objects are related through space, and distance calculations can be used to explore the strength of this relationship, as described in the context of vector data in Section <a href="spatial-operations.html#distance-relations">4.2.8</a>.</p>
 <p>Spatial operations on raster objects include subsetting — covered in Section <a href="spatial-operations.html#spatial-raster-subsetting">4.3.1</a> — and merging several raster ‘tiles’ into a single object, as demonstrated in Section <a href="spatial-operations.html#merging-rasters">4.3.8</a>.
@@ -322,6 +322,9 @@ You can learn more at <a href="https://www.r-spatial.org/r/2017/06/22/spatial-in
 <span class="header-section-number">4.2.3</span> DE-9IM strings<a class="anchor" aria-label="anchor" href="#de-9im-strings"><i class="fas fa-link"></i></a>
 </h3>
 <p>Underlying the binary predicates demonstrated in the previous section is the Dimensionally Extended 9-Intersection Model (DE-9IM).
+As the cryptic name suggests, this is not an easy topic.
+Learning it may be worthwhile, however, to better understand spatial relationships.
+Furthermore, advanced uses of DE-9IM include creating custom spatial predicates.
 The model was originally labelled “DE + 9IM” by its inventors, referring to the “dimension of the intersections of boundaries, interiors, and exteriors of two features” <span class="citation">(<a href="references.html#ref-clementini_comparison_1995" role="doc-biblioref">Clementini and Di Felice 1995</a>)</span>, but is now referred to as DE-9IM <span class="citation">(<a href="references.html#ref-shen_classification_2018" role="doc-biblioref">Shen, Chen, and Liu 2018</a>)</span>.
 <!-- The model's workings can be demonstrated with reference to two intersecting polygons, as illustrated in Figure \@ref(fig:de-9im). --></p>
 <p>To demonstrate how DE-9IM strings work, let’s take a look at the various ways that the first geometry pair in Figure <a href="spatial-operations.html#fig:relations">4.2</a> relate.
@@ -529,7 +532,7 @@ FIGURE 4.8: Average height of the top 101 high points across the regions of New 
 <code class="sourceCode R"><span class="va">nz_agg2</span> <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_join.html">st_join</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">nz</span>, y <span class="op">=</span> <span class="va">nz_height</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">Name</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html">%&gt;%</a></span>
   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarize</a></span><span class="op">(</span>elevation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/summarize-generics.html">mean</a></span><span class="op">(</span><span class="va">elevation</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p>The resulting <code>nz_agg</code> objects have the same geometry as the aggregating object <code>nz</code> but with a new column summarising the values of <code>x</code> in each region using the function <code><a href="https://rdrr.io/pkg/terra/man/summarize-generics.html">mean()</a></code>.
+<p>The resulting <code>nz_agg</code> objects have the same geometry as the aggregating object <code>nz</code> but with a new column summarizing the values of <code>x</code> in each region using the function <code><a href="https://rdrr.io/pkg/terra/man/summarize-generics.html">mean()</a></code>.
 Other functions could be used instead of <code><a href="https://rdrr.io/pkg/terra/man/summarize-generics.html">mean()</a></code> here, including <code><a href="https://rdrr.io/pkg/terra/man/summarize-generics.html">median()</a></code>, <code><a href="https://rdrr.io/r/stats/sd.html">sd()</a></code> and other functions that return a single value per group.
 Note: one difference between the <code><a href="https://r-spatial.github.io/sf/reference/aggregate.sf.html">aggregate()</a></code> and <code>group_by() %&gt;% summarize()</code> approaches is that the former results in <code>NA</code> values for unmatching region names while the latter preserves region names.
 The ‘tidy’ approach is thus more flexible in terms of aggregating functions and the column names of the results.
@@ -558,8 +561,8 @@ How can we transfer the values of the underlying nine spatial polygons into the 
 This is implemented in <code><a href="https://r-spatial.github.io/sf/reference/interpolate_aw.html">st_interpolate_aw()</a></code>, as demonstrated in the code chunk below.</p>
 <div class="sourceCode" id="cb139"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">iv</span> <span class="op">=</span> <span class="va">incongruent</span><span class="op">[</span><span class="st">"value"</span><span class="op">]</span> <span class="co"># keep only the values to be transferred</span>
-<span class="va">agg_aw</span> <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/interpolate_aw.html">st_interpolate_aw</a></span><span class="op">(</span><span class="va">iv</span>, <span class="va">aggregating_zones</span>, ext <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; Warning in st_interpolate_aw.sf(iv, aggregating_zones, ext = TRUE):</span>
+<span class="va">agg_aw</span> <span class="op">=</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/interpolate_aw.html">st_interpolate_aw</a></span><span class="op">(</span><span class="va">iv</span>, <span class="va">aggregating_zones</span>, extensive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="co">#&gt; Warning in st_interpolate_aw.sf(iv, aggregating_zones, extensive = TRUE):</span>
 <span class="co">#&gt; st_interpolate_aw assumes attributes are constant or uniform over areas of x</span>
 <span class="va">agg_aw</span><span class="op">$</span><span class="va">value</span>
 <span class="co">#&gt; [1] 19.6 25.7</span></code></pre></div>
@@ -1012,7 +1015,7 @@ Next, compute and visualize the difference between the raster created using the 
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Geocomputation with R</strong>" was written by Robin Lovelace, Jakub Nowosad, Jannes Muenchow. It was last built on 2022-05-31.</p>
+    <p>"<strong>Geocomputation with R</strong>" was written by Robin Lovelace, Jakub Nowosad, Jannes Muenchow. It was last built on 2022-06-04.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

@@ -30,7 +30,7 @@ Spatial joining (Section \@ref(spatial-joining)) and aggregation (Section \@ref(
 
 Spatial operations differ from non-spatial operations in a number of ways, however:
 Spatial joins, for example, can be done in a number of ways --- including matching entities that intersect with or are within a certain distance of the target dataset --- while the attribution joins discussed in Section \@ref(vector-attribute-joining) in the previous chapter can only be done in one way (except when using fuzzy joins, as described in the documentation of the [**fuzzyjoin**](https://cran.r-project.org/package=fuzzyjoin) package).
-The *type* of spatial relationship between objects must be considered when undertaking spatial operations, as described in Section \@ref(topological-relations), on topological relations between vector features.
+Different *types* of spatial relationship between objects, including intersects and disjoint, are described in Section \@ref(topological-relations).
 \index{spatial operations}
 Another unique aspect of spatial objects is distance: all spatial objects are related through space, and distance calculations can be used to explore the strength of this relationship, as described in the context of vector data in Section \@ref(distance-relations).
 
@@ -273,6 +273,9 @@ You can learn more at https://www.r-spatial.org/r/2017/06/22/spatial-index.html.
 ### DE-9IM strings
 
 Underlying the binary predicates demonstrated in the previous section is the Dimensionally Extended 9-Intersection Model (DE-9IM).
+As the cryptic name suggests, this is not an easy topic.
+Learning it may be worthwhile, however, to better understand spatial relationships.
+Furthermore, advanced uses of DE-9IM include creating custom spatial predicates.
 The model was originally labelled "DE + 9IM" by its inventors, referring to the "dimension of the intersections of boundaries, interiors, and exteriors of two features" [@clementini_comparison_1995], but is now referred to as DE-9IM [@shen_classification_2018].
 <!-- The model's workings can be demonstrated with reference to two intersecting polygons, as illustrated in Figure \@ref(fig:de-9im). -->
 
@@ -524,7 +527,7 @@ nz_agg2 = st_join(x = nz, y = nz_height) %>%
 
 
 
-The resulting `nz_agg` objects have the same geometry as the aggregating object `nz` but with a new column summarising the values of `x` in each region using the function `mean()`.
+The resulting `nz_agg` objects have the same geometry as the aggregating object `nz` but with a new column summarizing the values of `x` in each region using the function `mean()`.
 Other functions could be used instead of `mean()` here, including `median()`, `sd()` and other functions that return a single value per group.
 Note: one difference between the `aggregate()` and `group_by() %>% summarize()` approaches is that the former results in `NA` values for unmatching region names while the latter preserves region names.
 The 'tidy' approach is thus more flexible in terms of aggregating functions and the column names of the results.
@@ -555,8 +558,8 @@ This is implemented in `st_interpolate_aw()`, as demonstrated in the code chunk 
 
 ```r
 iv = incongruent["value"] # keep only the values to be transferred
-agg_aw = st_interpolate_aw(iv, aggregating_zones, ext = TRUE)
-#> Warning in st_interpolate_aw.sf(iv, aggregating_zones, ext = TRUE):
+agg_aw = st_interpolate_aw(iv, aggregating_zones, extensive = TRUE)
+#> Warning in st_interpolate_aw.sf(iv, aggregating_zones, extensive = TRUE):
 #> st_interpolate_aw assumes attributes are constant or uniform over areas of x
 agg_aw$value
 #> [1] 19.6 25.7
