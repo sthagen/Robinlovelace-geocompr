@@ -122,7 +122,7 @@ Tidyverse compatibility is an advantage of **sf** over its predecessor **sp**, b
 
 Base R subsetting methods include the operator `[` and the function `subset()`.
 The key **dplyr** subsetting functions are  `filter()` and `slice()` for subsetting rows, and `select()` for subsetting columns.
-Both approaches preserve the spatial components of attribute data in `sf` objects, while using the operator `$` or the **dplyr** function `pull()` to return a single attribute column as a vector will lose the attribute data, as we will see.
+Both approaches preserve the spatial components of attribute data in `sf` objects, while using the operator `$` or the **dplyr** function `pull()` to return a single attribute column as a vector will lose the geometry data, as we will see.
 \index{attribute!subsetting}
 This section focuses on subsetting `sf` data frames; for further details on subsetting vectors and non-geographic data frames we recommend reading section section [2.7](https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Index-vectors) of An Introduction to R [@rcoreteam_introduction_2021] and Chapter [4](https://adv-r.hadley.nz/subsetting.html) of Advanced R Programming [@wickham_advanced_2019], respectively.
 
@@ -287,9 +287,9 @@ This is illustrated below, in which only countries from Asia are filtered from t
 
 
 ```r
-world7 = world %>%
-  filter(continent == "Asia") %>%
-  dplyr::select(name_long, continent) %>%
+world7 = world |>
+  filter(continent == "Asia") |>
+  dplyr::select(name_long, continent) |>
   slice(1:5)
 ```
 
@@ -352,12 +352,12 @@ nrow(world_agg2)
 ```
 
 The resulting `world_agg2` object is a spatial object containing 8 features representing the continents of the world (and the open ocean).
-`group_by() %>% summarize()` is the **dplyr** equivalent of `aggregate()`, with the variable name provided in the `group_by()` function specifying the grouping variable and information on what is to be summarized passed to the `summarize()` function, as shown below:
+`group_by() |> summarize()` is the **dplyr** equivalent of `aggregate()`, with the variable name provided in the `group_by()` function specifying the grouping variable and information on what is to be summarized passed to the `summarize()` function, as shown below:
 
 
 ```r
-world_agg3 = world %>%
-  group_by(continent) %>%
+world_agg3 = world |>
+  group_by(continent) |>
   summarize(pop = sum(pop, na.rm = TRUE))
 ```
 
@@ -366,8 +366,8 @@ This flexibility is illustrated in the command below, which calculates not only 
 
 
 ```r
-world_agg4  = world %>% 
-  group_by(continent) %>%
+world_agg4  = world |> 
+  group_by(continent) |> 
   summarize(pop = sum(pop, na.rm = TRUE), `area_sqkm` = sum(area_km2), n = n())
 ```
 
@@ -375,18 +375,18 @@ In the previous code chunk `pop`, `area_sqkm` and `n` are column names in the re
 These aggregating functions return `sf` objects with rows representing continents and geometries containing the multiple polygons representing each land mass and associated islands (this works thanks to the geometric operation 'union', as explained in Section \@ref(geometry-unions)).
 
 Let's combine what we have learned so far about **dplyr** functions, by chaining multiple commands to summarize attribute data about countries worldwide by continent.
-The following command calculates population density (with `mutate()`), arranges continents by the number countries they contain (with `dplyr::arrange()`), and keeps only the 3 most populous continents (with `top_n()`), the result of which is presented in Table \@ref(tab:continents)):
+The following command calculates population density (with `mutate()`), arranges continents by the number countries they contain (with `dplyr::arrange()`), and keeps only the 3 most populous continents (with `dplyr::slice_max()`), the result of which is presented in Table \@ref(tab:continents)):
 
 
 ```r
-world_agg5 = world %>% 
-  st_drop_geometry() %>%                      # drop the geometry for speed
-  dplyr::select(pop, continent, area_km2) %>% # subset the columns of interest  
-  group_by(continent) %>%                     # group by continent and summarize:
-  summarize(Pop = sum(pop, na.rm = TRUE), Area = sum(area_km2), N = n()) %>%
-  mutate(Density = round(Pop / Area)) %>%     # calculate population density
-  top_n(n = 3, wt = Pop) %>%                  # keep only the top 3
-  arrange(desc(N))                            # arrange in order of n. countries
+world_agg5 = world |> 
+  st_drop_geometry() |>                      # drop the geometry for speed
+  dplyr::select(pop, continent, area_km2) |> # subset the columns of interest  
+  group_by(continent) |>                     # group by continent and summarize:
+  summarize(Pop = sum(pop, na.rm = TRUE), Area = sum(area_km2), N = n()) |>
+  mutate(Density = round(Pop / Area)) |>     # calculate population density
+  slice_max(Pop, n = 3) |>                   # keep only the top 3
+  arrange(desc(N))                           # arrange in order of n. countries
 ```
 
 
@@ -554,7 +554,7 @@ Alternatively, we can use one of **dplyr** functions - `mutate()` or `transmute(
 
 
 ```r
-world %>% 
+world |> 
   mutate(pop_dens = pop / area_km2)
 ```
 
@@ -562,7 +562,7 @@ The difference between `mutate()` and `transmute()` is that the latter drops all
 
 
 ```r
-world %>% 
+world |> 
   transmute(pop_dens = pop / area_km2)
 ```
 
@@ -572,7 +572,7 @@ Additionally, we can define a separator (here: a colon `:`) which defines how th
 
 
 ```r
-world_unite = world %>%
+world_unite = world |>
   tidyr::unite("con_reg", continent:region_un, sep = ":", remove = TRUE)
 ```
 
@@ -581,7 +581,7 @@ The resulting `sf` object has a new column called `con_reg` representing the con
 
 
 ```r
-world_separate = world_unite %>% 
+world_separate = world_unite |>
   tidyr::separate(con_reg, c("continent", "region_un"), sep = ":")
 ```
 
@@ -593,7 +593,7 @@ The following command, for example, renames the lengthy `name_long` column to si
 
 
 ```r
-world %>% 
+world |> 
   rename(name = name_long)
 ```
 
@@ -605,7 +605,7 @@ This is illustrated below, which outputs the same `world` object, but with very 
 
 ```r
 new_names = c("i", "n", "c", "r", "s", "t", "a", "p", "l", "gP", "geom")
-world_new_names = world %>% 
+world_new_names = world |>
   setNames(new_names)
 ```
 
@@ -617,7 +617,7 @@ Do this with `st_drop_geometry()`, **not** manually with commands such as `selec
 
 
 ```r
-world_data = world %>% st_drop_geometry()
+world_data = world |> st_drop_geometry()
 class(world_data)
 #> [1] "tbl_df"     "tbl"        "data.frame"
 ```
