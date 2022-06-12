@@ -663,10 +663,10 @@ It is also possible to use the function `levels()` for retrieving and adding new
 
 
 ```r
-levels(grain)[[1]] = c(levels(grain)[[1]], wetness = c("wet", "moist", "dry"))
+levels(grain) = data.frame(value = c(0, 1, 2), wetness = c("wet", "moist", "dry"))
 levels(grain)
 #> [[1]]
-#> [1] "clay"  "silt"  "sand"  "wet"   "moist" "dry"
+#> [1] "wet"   "moist" "dry"
 ```
 
 <div class="figure" style="text-align: center">
