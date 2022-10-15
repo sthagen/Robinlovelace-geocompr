@@ -1,5 +1,10 @@
 # Statistical learning {#spatial-cv}
 
+```{r 12-knitr-settings, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE)
+```
+
+
 ## Prerequisites {-}
 
 This chapter assumes proficiency with geographic data analysis\index{geographic data analysis}, for example gained by studying the contents and working-through the exercises in Chapters \@ref(spatial-class) to \@ref(reproj-geo-data).
@@ -10,6 +15,8 @@ Packages **GGally**, **lgr**, **kernlab**, **ml3measures**, **paradox**, **pROC*
 ]
 
 ```{r 12-spatial-cv-1, message=FALSE}
+library(sf)
+library(terra)
 library(dplyr)
 library(future)
 library(lgr)
@@ -20,8 +27,6 @@ library(mlr3spatiotempcv)
 library(mlr3tuning)
 library(mlr3viz)
 library(progressr)
-library(sf)
-library(terra)
 ```
 
 Required data will be attached in due course.
@@ -310,7 +315,7 @@ The first essential argument of these `Task*$new()` functions is `backend`.
 `backend` expects that the input data includes the response and predictor variables.
 The `target` argument indicates the name of a response variable (in our case this is `lslpts`) and `positive` determines which of the two factor levels of the response variable indicate the landslide initiation point (in our case this is `TRUE`).
 All other variables of the `lsl` dataset will serve as predictors.
-For spatial CV, we need to provide a few extra arguments (`extra_args`).
+For spatial CV, we need to provide a few extra arguments.
 The `coordinate_names` argument expects the names of the coordinate columns (see Section \@ref(intro-cv) and Figure \@ref(fig:partitioning)).
 Additionally, we should indicate the used CRS (`crs`) and decide if we want to use the coordinates as predictors in the modeling (`coords_as_features`).
 
@@ -321,15 +326,14 @@ task = mlr3spatiotempcv::TaskClassifST$new(
   backend = mlr3::as_data_backend(lsl), 
   target = "lslpts", 
   positive = "TRUE",
-  extra_args = list(
-    coordinate_names = c("x", "y"),
-    coords_as_features = FALSE,
-    crs = "EPSG:32717")
+  coordinate_names = c("x", "y"),
+  coords_as_features = FALSE,
+  crs = "EPSG:32717"
   )
 ```
 
-Note that `TaskClassifST$new()` also accepts an `sf`-object as input for the `backend` parameter.
-In this case, you might only want to specify the `coords_as_features` argument of the `extra_args` list.
+Note that `mlr3spatiotempcv::as_task_classif_st()` also accepts an `sf`-object as input for the `backend` parameter.
+In this case, you might only want to additionally specify the `coords_as_features` argument.
 We did not convert `lsl` into an `sf`-object because `TaskClassifST$new()` would just turn it back into a non-spatial `data.table` object in the background.
 For a short data exploration, the `autoplot()` function of the **mlr3viz** package might come in handy since it plots the response against all predictors and all predictors against all predictors (not shown).
 
@@ -495,10 +499,7 @@ Since (spatial) hyperparameter tuning is the major aim of this section, we will 
 For those wishing to apply a random forest model, we recommend to read this chapter, and then proceed to Chapter \@ref(eco) in which we will apply the currently covered concepts and techniques to make spatial predictions based on a random forest model.
 
 SVMs\index{SVM} search for the best possible 'hyperplanes' to separate classes (in a classification\index{classification} case) and estimate 'kernels' with specific hyperparameters to create non-linear boundaries between classes [@james_introduction_2013].
-Hyperparameters\index{hyperparameter} should not be confused with coefficients of parametric models, which are sometimes also referred to as parameters.^[
-For a detailed description of the difference between coefficients and hyperparameters, see the 'machine mastery' blog post on the subject.
-<!-- For a more detailed description of the difference between coefficients and hyperparameters, see the [machine mastery blog](https://machinelearningmastery.com/difference-between-a-parameter-and-a-hyperparameter/). -->
-]
+Hyperparameters\index{hyperparameter} should not be confused with coefficients of parametric models, which are sometimes also referred to as parameters (see also the [machine mastery blog](https://machinelearningmastery.com/difference-between-a-parameter-and-a-hyperparameter/)).
 Coefficients can be estimated from the data, while hyperparameters are set before the learning begins.
 Optimal hyperparameters are usually determined within a defined range with the help of cross-validation methods.
 This is called hyperparameter tuning.
@@ -508,20 +509,22 @@ This works for non-spatial data but is of less use for spatial data where 'spati
 
 Before defining spatial tuning, we will set up the **mlr3**\index{mlr3 (package)} building blocks, introduced in Section \@ref(glm), for the SVM.
 The classification\index{classification} task remains the same, hence we can simply reuse the `task` object created in Section \@ref(glm).
-Learners implementing SVM can be found using `listLearners()` as follows:
+Learners implementing SVM can be found using the `list_mlr3learners()` command of the **mlr3extralearners** package as follows:
 
 ```{r 12-spatial-cv-23}
-mlr3_learners = list_mlr3learners()
+mlr3_learners = mlr3extralearners::list_mlr3learners()
 mlr3_learners[class == "classif" & grepl("svm", id),
               .(id, class, mlr3_package, required_packages)]
 ```
 
 Of the options illustrated above, we will use `ksvm()` from the **kernlab** package [@karatzoglou_kernlab_2004].
-To allow for non-linear relationships, we use the popular radial basis function (or Gaussian) kernel which is also the default of `ksvm()`.
+To allow for non-linear relationships, we use the popular radial basis function (or Gaussian) kernel (`"rbfdot" `) which is also the default of `ksvm()`.
+Setting the`type` argument to `"C-svc"` makes sure that `ksvm()` is solving a classification task. 
 To make sure that the tuning does not stop because of one failing model, we additionally define a fallback learner (for more information please refer to https://mlr3book.mlr-org.com/technical.html#fallback-learners).
 
 ```{r 12-spatial-cv-24}
-lrn_ksvm = mlr3::lrn("classif.ksvm", predict_type = "prob", kernel = "rbfdot")
+lrn_ksvm = mlr3::lrn("classif.ksvm", predict_type = "prob", kernel = "rbfdot",
+                     type = "C-svc")
 lrn_ksvm$fallback = lrn("classif.featureless", predict_type = "prob")
 ```
 
