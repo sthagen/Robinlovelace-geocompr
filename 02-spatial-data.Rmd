@@ -844,6 +844,26 @@ tm2 = tm_shape(india_buffer_without_s2) +
             title = "s2 switched off")
 
 tmap_arrange(tm1, tm2, ncol = 2)
+
+if (packageVersion("tmap") >= "4.0"){
+  library(tmap)
+  tm1 = tm_shape(india_buffer_with_s2) +
+    tm_fill(fill = hcl.colors(4, palette = "purple green")[3]) +
+    tm_shape(india) +
+    tm_fill(fill = "grey95") +
+    tm_title("st_buffer() with dist = 1") +
+    tm_title("s2 switched on (default)", position = tm_pos_in(), size = 1)
+  
+  tm2 = tm_shape(india_buffer_without_s2) +
+    tm_fill(fill = hcl.colors(4, palette = "purple green")[3]) +
+    tm_shape(india) +
+    tm_fill(fill = "grey95") +
+    tm_title(" ") +
+    tm_title("s2 switched off", position = tm_pos_in(), size = 1)
+  
+  tmap_arrange(tm1, tm2, ncol = 2)
+}
+
 ```
 
 Throughout this book we will assume that S2 is turned on, unless explicitly stated.
@@ -924,7 +944,6 @@ We also encourage you to read @pebesma_spatial_2022 for the most comprehensive i
 The **terra** package supports raster objects in R.
 Like its predecessor **raster** (created by the same developer, Robert Hijmans), it provides an extensive set of functions to create, read, export, manipulate and process raster datasets.
 **terra**'s functionality is largely the same as the more mature **raster** package, but there are some differences: **terra** functions are usually more computationally efficient than **raster** equivalents.
-<!-- todo: add evidence (RL 2021-11) -->
 On the other hand, the **raster** class system is popular and used by many other packages.
 You can seamlessly translate between the two types of object to ensure backwards compatibility with older scripts and packages, for example, with the functions [`raster()`](https://rspatial.github.io/raster/reference/raster.html), [`stack()`](https://rspatial.github.io/raster/reference/stack.html), and `brick()` in the **raster** package (see the previous chapter for more on the evolution of R packages for working with geographic data).
 
