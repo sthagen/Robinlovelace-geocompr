@@ -872,7 +872,7 @@ sf_use_s2(TRUE)
 ```
 
 ```{block2 09-gis-2, type="rmdnote"}
-Although the **sf**'s used of S2 makes sense in many cases, in some cases there are good reasons for turning S2 off for the duration of an R session or even for an entire project.
+Although the **sf**'s use of S2 makes sense in many cases, in some cases there are good reasons for turning S2 off for the duration of an R session or even for an entire project.
 As documented in issue [1771](https://github.com/r-spatial/sf/issues/1771) in **sf**'s GitHub repo, the default behavior can make code that would work with S2 turned off (and with older versions of **sf**) fail.
 These edge cases include operations on polygons that are not valid according to S2's stricter definition.
 If you see error message such as `#> Error in s2_geography_from_wkb ...` it may be worth trying the command that generated the error message again, after turning off S2. 
@@ -918,7 +918,7 @@ source("code/02-raster-intro-plot2.R", print.eval = TRUE)
 
 Over the last two decades, several packages for reading and processing raster datasets have been developed.
 As outlined in Section \@ref(the-history-of-r-spatial), chief among them was **raster**, which led to a step change in R's raster capabilities when it was launched in 2010 and the premier package in the space until the development of **terra** and **stars**.
-Both more recently developed package provide powerful and performant functions for working with raster datasets and there is substantial overlap between their possible use cases.
+Both more recently developed packages provide powerful and performant functions for working with raster datasets and there is substantial overlap between their possible use cases.
 In this book we focus on **terra**, which replaces the older and (in most cases) slower **raster**.
 Before learning about the how **terra**'s class system works, this section describes similarities and differences between **terra** and **stars**; this knowledge will help decide which is most appropriate in different situations.
 
