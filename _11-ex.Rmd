@@ -2,6 +2,18 @@
 The solutions assume the following packages are attached (other packages will be attached when needed):
 ```
 
+```{r setup11, include=FALSE}
+poly_centroid = function(poly_mat) {
+  Origin = poly_mat[1, ] # create a point representing the origin
+  i = 2:(nrow(poly_mat) - 2)
+  T_all = lapply(i, function(x) {rbind(Origin, poly_mat[x:(x + 1), ], Origin)})
+  C_list = lapply(T_all, t_centroid)
+  C = do.call(rbind, C_list)
+  A = vapply(T_all, t_area, FUN.VALUE = double(1))
+  c(weighted.mean(C[, 1], A), weighted.mean(C[, 2], A))
+}
+```
+
 ```{r 11-ex-e0}
 library(sf)
 ```
@@ -9,7 +21,7 @@ library(sf)
 E1. Read the script [`11-centroid-alg.R`](https://github.com/geocompx/geocompr/blob/main/code/11-centroid-alg.R) in the `code` folder of the book's GitHub repo.
 
   - Which of the best practices covered in Section \@ref(scripts) does it follow?
-  - Create a version of the script on your computer in an IDE\index{IDE} such as RStudio\index{RStudio} (preferably by typing-out the script line-by-line, in your own coding style and with your own comments, rather than copy-pasting --- this will help you learn how to type scripts). Using the example of a square polygon (e.g., created with `poly_mat = cbind(x = c(0, 0, 9, 9, 0), y = c(0, 9, 9, 0, 0))`) execute the script line-by-line.
+  - Create a version of the script on your computer in an IDE\index{IDE} such as RStudio\index{RStudio} (preferably by typing-out the script line-by-line, in your own coding style and with your own comments, rather than copy-pasting --- this will help you learn how to type scripts). Using the example of a square polygon (e.g., created with `poly_mat = cbind(x = c(0, 9, 9, 0, 0), y = c(0, 0, 9, 9, 0))`) execute the script line-by-line.
   - What changes could be made to the script to make it more reproducible?
   - How could the documentation be improved?
 
@@ -29,7 +41,7 @@ Furthermore, the anonymous functions could be replaced with named functions and 
 ```
 
 
-E2. In the geometric algorithms section we calculated that the area and geographic centroid of the polygon represented by `poly_mat` was `r sum(A)` and `r round(c(weighted.mean(C[, 1], A), weighted.mean(C[, 2], A)), 1)`, respectively.
+E2. In the geometric algorithms section we calculated that the area and geographic centroid of the polygon represented by `poly_mat` was 245 and 8.8, 9.2, respectively.
 
   - Reproduce the results on your own computer with reference to the script [`11-centroid-alg.R`](https://github.com/geocompx/geocompr/blob/main/code/11-centroid-alg.R), an implementation of this algorithm (bonus: type out the commands - try to avoid copy-pasting).
   - Are the results correct? Verify them by converting `poly_mat` into an `sfc` object (named `poly_sfc`) with `st_polygon()` (hint: this function takes objects of class `list()`) and then using `st_area()` and `st_centroid()`.
@@ -37,8 +49,8 @@ E2. In the geometric algorithms section we calculated that the area and geograph
 ```{r 11-ex-e}
 # We can verify the answer by converting `poly_mat` into a simple feature collection
 # as follows, which shows the calculations match:
-x_coords = c(10, 0, 0, 12, 20, 10)
-y_coords = c(0, 0, 10, 20, 15, 0)
+x_coords = c(10, 20, 12, 0, 0, 10)
+y_coords = c(0, 15, 20, 10, 0, 0)
 poly_mat = cbind(x_coords, y_coords)
 poly_sfc = sf::st_polygon(list(poly_mat))
 sf::st_area(poly_sfc)
@@ -50,8 +62,8 @@ sf::st_centroid(poly_sfc)
 E3. It was stated that the algorithm\index{algorithm} we created only works for *convex hulls*. Define convex hulls\index{convex hull} (see the geometry operations chapter) and test the algorithm on a polygon that is *not* a convex hull.
 
 ```{r 11-ex-e3}
-x_coords = c(10, 5, 0, 0, 12, 20, 10)
-y_coords = c(0, 5, 0, 10, 20, 15, 0)
+x_coords = c(10, 20, 12, 0, 0, 5, 10)
+y_coords = c(0, 15, 20, 10, 0, 5, 0)
 plot(x_coords, y_coords, type = "l")
 poly_mat = cbind(x_coords, y_coords)
 # source("https://github.com/geocompx/geocompr/raw/main/code/11-centroid-alg.R")
