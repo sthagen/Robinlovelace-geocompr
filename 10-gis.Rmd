@@ -7,6 +7,7 @@
 ```{r 09-gis-1, message=FALSE}
 library(sf)
 library(terra)
+remotes::install_github("r-tmap/tmap")
 ```
 
 <!--toDo:jn-->
@@ -186,7 +187,7 @@ incongr_wgs = st_transform(incongruent, "EPSG:4326")
 aggzone_wgs = st_transform(aggregating_zones, "EPSG:4326")
 ```
 
-```{r uniondata, echo=FALSE, fig.cap="Illustration of two areal units: incongruent (black lines) and aggregating zones (red borders).", eval=has_qgis_plugins}
+```{r uniondata, echo=FALSE, fig.cap="Illustration of two areal units: incongruent (black lines) and aggregating zones (red borders)."}
 library(tmap)
 tm_shape(incongr_wgs) +
   tm_polygons(border.col = "grey5") +
@@ -206,18 +207,15 @@ tm_shape(incongr_wgs) +
     frame = FALSE,
     legend.text.size = 1
   )
-
-# toDo: jn
-# tm_add_legend is missing
 if (packageVersion("tmap") >= "4.0") {
   library(tmap)
   tm_shape(incongr_wgs) +
     tm_polygons(col = "grey5") +
     tm_shape(aggzone_wgs) +
     tm_borders(col_alpha = 0.5, col = "red") +
-    # tm_add_legend(type = "line", labels = c("incongr_wgs", "aggzone_wgs"),
-    #               col = c("grey5", "red"), lwd = 3) +
-    tm_scale_bar(position = c("left", "bottom"), breaks = c(0, 0.5, 1)) +
+    tm_add_legend(type = "Lines", labels = c("incongr_wgs", "aggzone_wgs"),
+                  col = c("grey5", "red"), lwd = 3) +
+    tm_scalebar(position = c("left", "bottom"), breaks = c(0, 0.5, 1)) +
     tm_layout(frame = FALSE, legend.text.size = 1)
 }
 ```
@@ -329,7 +327,7 @@ clean_sf = st_as_sf(clean)
 
 The result, the right panel of \@ref(fig:sliver), looks as expected -- sliver polygons are now removed.
 
-```{r sliver, echo=FALSE, fig.cap="Sliver polygons colored in red (left panel). Cleaned polygons (right panel).", eval=has_qgis_plugins}
+```{r sliver, echo=FALSE, fig.cap="Sliver polygons colored in red (left panel). Cleaned polygons (right panel)."}
 knitr::include_graphics("figures/10-sliver.png")
 ```
 
@@ -925,12 +923,12 @@ if (packageVersion("tmap") >= "4.0") {
     tm_lines(col = "black", lwd = 3) +
     tm_shape(hardees) +
     tm_symbols(fill = "#F10C26") +
-    # tm_add_legend(type = "line", col = "black", lwd = 3,
-    #               labels = "The US Route 1 highway") +
-    # tm_add_legend(type = "fill", col = "#FFFDD0",
-    #               border.alpha = 0.3, label = "35km buffer") +
-    # tm_add_legend(type = "symbol", col = "#F10C26",
-    #               labels = "Restaurants") +
+    tm_add_legend(type = "Lines", col = "black", lwd = 3,
+                  labels = "The US Route 1 highway") +
+    tm_add_legend(type = "Polygons", fill = "#FFFDD0",
+                  border.alpha = 0.3, labels = "35km buffer") +
+    tm_add_legend(type = "Symbols", fill = "#F10C26",
+                  labels = "Restaurants", shape = 21) +
     tm_layout(frame = FALSE)
 }
 ```
