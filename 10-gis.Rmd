@@ -4,17 +4,14 @@
 
 - This chapter requires QGIS\index{QGIS}, SAGA\index{SAGA} and GRASS\index{GRASS} to be installed and the following packages to be attached:
 
-```{r 09-gis-1, message=FALSE}
+```{r 09-gis-1, message=FALSE,echo=FALSE}
 library(sf)
 library(terra)
-remotes::install_github("r-tmap/tmap")
 ```
 
-<!--toDo:jn-->
-<!-- qgisprocess to CRAN -->
-
 ```{r 09-gis-1-2, message=FALSE, eval=FALSE}
-remotes::install_github("r-spatial/qgisprocess")
+library(sf)
+library(terra)
 library(qgisprocess)
 library(Rsagacmd)
 library(rgrass)
@@ -143,7 +140,6 @@ This package automatically tries to detect a QGIS installation and complains if 
 There are a few possible solutions when the configuration fails: you can set `options(qgisprocess.path = "path/to/your_qgis_process")`, or set up the `R_QGISPROCESS_PATH` environment variable.
 The above approaches can also be used when you have more than one QGIS installation and want to decide which one to use.
 For more details, please refer to the **qgisprocess** ['getting started' vignette](https://r-spatial.github.io/qgisprocess/articles/qgisprocess.html).
-
 Next, we can find which plugins (meaning different software) are available on our computer.
 
 ```{r plugins, eval=has_qgis_plugins}
@@ -182,56 +178,39 @@ We use again the incongruent polygons\index{spatial congruence} we have already 
 Both polygon datasets are available in the **spData** package, and for both we would like to use a geographic CRS\index{CRS!geographic} (see also Chapter \@ref(reproj-geo-data)).
 
 ```{r 09-gis-4}
+
 data("incongruent", "aggregating_zones", package = "spData")
 incongr_wgs = st_transform(incongruent, "EPSG:4326")
 aggzone_wgs = st_transform(aggregating_zones, "EPSG:4326")
 ```
 
 ```{r uniondata, echo=FALSE, fig.cap="Illustration of two areal units: incongruent (black lines) and aggregating zones (red borders)."}
+#| message: FALSE
+#| results: hide
 library(tmap)
 tm_shape(incongr_wgs) +
-  tm_polygons(border.col = "grey5") +
+  tm_polygons(col = "grey5") +
   tm_shape(aggzone_wgs) +
-  tm_borders(alpha = 0.5, col = "red") +
-  tm_add_legend(
-    type = "line",
-    labels = c("incongr_wgs", "aggzone_wgs"),
-    col = c("grey5", "red"),
-    lwd = 3
-  ) +
-  tm_scale_bar(
-    position = c("left", "bottom"),
-    breaks = c(0, 0.5, 1)
-  ) +
-  tm_layout(
-    frame = FALSE,
-    legend.text.size = 1
-  )
-if (packageVersion("tmap") >= "4.0") {
-  library(tmap)
-  tm_shape(incongr_wgs) +
-    tm_polygons(col = "grey5") +
-    tm_shape(aggzone_wgs) +
-    tm_borders(col_alpha = 0.5, col = "red") +
-    tm_add_legend(type = "Lines", labels = c("incongr_wgs", "aggzone_wgs"),
-                  col = c("grey5", "red"), lwd = 3) +
-    tm_scalebar(position = c("left", "bottom"), breaks = c(0, 0.5, 1)) +
-    tm_layout(frame = FALSE, legend.text.size = 1)
-}
+  tm_borders(col_alpha = 0.5, col = "red") +
+  tm_add_legend(type = "Lines", labels = c("incongr_wgs", "aggzone_wgs"),
+                col = c("grey5", "red"), lwd = 3, position = tm_pos_in("right", "top")) +
+  tm_scalebar(position = c("left", "bottom"), breaks = c(0, 0.5, 1)) +
+  tm_layout(frame = FALSE, legend.text.size = 1)
 ```
 
-To find an algorithm to do this work, we can search the output of the `qgis_algorithms()` function.
+The first step is to find an algorithm that can merge two vector objects.
+To list all of the available algorithms, we can use the `qgis_algorithms()` function.
 This function returns a data frame containing all of the available providers and the algorithms they contain.^[Therefore, if you cannot see an expected provider, it is probably because you still need to install some external GIS software.] 
 
 ```{r, eval=has_qgis_plugins}
-qgis_algo = qgis_algorithms()
+qgis_algorithms()
 ```
 
-The `qgis_algo` object has a lot of columns, but usually, we are only interested in the `algorithm` column that combines information about the provider and the algorithm name.
+To find an algorithm, we can use the `qgis_search_algorithms()` function.
 Assuming that the short description of the function contains the word "union"\index{union}, we can run the following code to find the algorithm of interest:
 
 ```{r, eval=has_qgis_plugins}
-grep("union", qgis_algo$algorithm, value = TRUE)
+qgis_search_algorithms("union")
 ```
 
 One of the algorithms on the above list, `"native:union"`, sounds promising.
@@ -284,7 +263,7 @@ One way to identify slivers is to find polygons with comparatively very small ar
 Let's search for an appropriate algorithm.
 
 ```{r, eval=has_qgis_plugins}
-grep("clean", qgis_algo$algorithm, value = TRUE)
+qgis_search_algorithms("clean")
 ```
 
 This time the found algorithm, `v.clean`, is not included in QGIS, but GRASS GIS\index{GRASS}.
@@ -353,8 +332,7 @@ For example, the topographic wetness index (TWI) was found useful in studying hy
 Let's search the algorithm list for this index using `"wetness"` as keyword.
 
 ```{r, eval=has_qgis_plugins}
-qgis_algo = qgis_algorithms()
-grep("wetness", qgis_algo$algorithm, value = TRUE) |>
+qgis_search_algorithms("wetness") |>
   head(2)
 ```
 
@@ -405,7 +383,7 @@ These phenotypes are used in many studies, including landslide susceptibility, e
 The original implementation of the geomorphons' algorithm was created in GRASS GIS, and we can find it in the **qgisprocess** list as `"grass7:r.geomorphon"`:
 
 ```{r, eval=FALSE}
-grep("geomorphon", qgis_algo$algorithm, value = TRUE)
+qgis_search_algorithms("geomorphon")
 #> [1] "grass7:r.geomorphon" "sagang:geomorphons" 
 qgis_show_help("grass7:r.geomorphon")
 # output not shown
@@ -889,48 +867,20 @@ load("extdata/postgis_data.Rdata")
 ```
 
 ```{r postgis, echo=FALSE, fig.cap="Visualization of the output of previous PostGIS commands showing the highway (black line), a buffer (light yellow) and four restaurants (red points) within the buffer.", fig.scap="Visualization of the output of previous PostGIS commands."}
-# plot the results of the queries
 library(tmap)
 tm_shape(buf) +
-  tm_polygons(col = "#FFFDD0", border.alpha = 0.3) +
+  tm_polygons(fill = "#FFFDD0", col_alpha = 0.3) +
   tm_shape(us_route) +
   tm_lines(col = "black", lwd = 3) +
   tm_shape(hardees) +
-  tm_symbols(col = "#F10C26") +
-  tm_add_legend(
-    type = "line", col = "black", lwd = 3,
-    labels = "The US Route 1 highway"
-  ) +
-  tm_add_legend(
-    type = "fill", col = "#FFFDD0",
-    border.alpha = 0.3, label = "35km buffer"
-  ) +
-  tm_add_legend(
-    type = "symbol", col = "#F10C26",
-    labels = "Restaurants"
-  ) +
-  tm_layout(
-    frame = FALSE,
-    legend.outside = TRUE,
-    legend.outside.size = 0.3
-  )
-
-if (packageVersion("tmap") >= "4.0") {
-  library(tmap)
-  tm_shape(buf) +
-    tm_polygons(fill = "#FFFDD0", col_alpha = 0.3) +
-    tm_shape(us_route) +
-    tm_lines(col = "black", lwd = 3) +
-    tm_shape(hardees) +
-    tm_symbols(fill = "#F10C26") +
-    tm_add_legend(type = "Lines", col = "black", lwd = 3,
-                  labels = "The US Route 1 highway") +
-    tm_add_legend(type = "Polygons", fill = "#FFFDD0",
-                  border.alpha = 0.3, labels = "35km buffer") +
-    tm_add_legend(type = "Symbols", fill = "#F10C26",
-                  labels = "Restaurants", shape = 21) +
-    tm_layout(frame = FALSE)
-}
+  tm_symbols(fill = "#F10C26") +
+  tm_add_legend(type = "Lines", col = "black", lwd = 3,
+                labels = "The US Route 1 highway") +
+  tm_add_legend(type = "Polygons", fill = "#FFFDD0",
+                border.alpha = 0.3, labels = "35km buffer") +
+  tm_add_legend(type = "Symbols", fill = "#F10C26",
+                labels = "Restaurants", shape = 21) +
+  tm_layout(frame = FALSE)
 ```
 
 Unlike PostGIS, **sf** only supports spatial vector data. 
@@ -977,11 +927,9 @@ library(rstac)
 # and search for images intersecting our AOI
 s = stac("https://earth-search.aws.element84.com/v0")
 items = s |>
-  stac_search(
-    collections = "sentinel-s2-l2a-cogs",
-    bbox = c(7.1, 51.8, 7.2, 52.8),
-    datetime = "2020-01-01/2020-12-31"
-  ) |>
+  stac_search(collections = "sentinel-s2-l2a-cogs",
+              bbox = c(7.1, 51.8, 7.2, 52.8),
+              datetime = "2020-01-01/2020-12-31") |>
   post_request() |>
   items_fetch()
 ```
@@ -1048,36 +996,26 @@ p = processes() # load available processes
 collections = list_collections() # load available collections
 formats = list_file_formats() # load available output formats
 # Load Sentinel-2 collection
-s2 = p$load_collection(
-  id = "SENTINEL2_L2A",
-  spatial_extent = list(
-    west = 7.5, east = 8.5,
-    north = 51.1, south = 50.1
-  ),
-  temporal_extent = list("2021-01-01", "2021-01-31"),
-  bands = list("B04", "B08")
-)
+s2 = p$load_collection(id = "SENTINEL2_L2A",
+                       spatial_extent = list(west = 7.5, east = 8.5,
+                                             north = 51.1, south = 50.1),
+                       temporal_extent = list("2021-01-01", "2021-01-31"),
+                       bands = list("B04", "B08"))
 # Compute NDVI vegetation index
-compute_ndvi = p$reduce_dimension(
-  data = s2, dimension = "bands",
-  reducer = function(data, context) {
-    (data[2] - data[1]) / (data[2] + data[1])
-  }
-)
+compute_ndvi = p$reduce_dimension(data = s2, dimension = "bands",
+                                  reducer = function(data, context) {
+                                      (data[2] - data[1]) / (data[2] + data[1])
+                                  })
 # Compute maximum over time
-reduce_max = p$reduce_dimension(
-  data = compute_ndvi, dimension = "t",
-  reducer = function(x, y) {
-    max(x)
-  }
-)
+reduce_max = p$reduce_dimension(data = compute_ndvi, dimension = "t",
+                                reducer = function(x, y) {
+                                    max(x)
+                                })
 # Export as GeoTIFF
 result = p$save_result(reduce_max, formats$output$GTiff)
 # Login, see https://docs.openeo.cloud/getting-started/r/#authentication
-login(
-  login_type = "oidc", provider = "egi",
-  config = list(client_id = "...", secret = "...")
-)
+login(login_type = "oidc", provider = "egi", 
+      config = list(client_id = "...", secret = "..."))
 # Execute processes
 compute_result(graph = result, output_file = tempfile(fileext = ".tif"))
 ```
