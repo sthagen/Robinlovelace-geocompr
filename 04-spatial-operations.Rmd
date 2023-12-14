@@ -1,5 +1,9 @@
 # Spatial data operations {#spatial-operations}
 
+```{r, include = FALSE}
+source("code/before_script.R")
+```
+
 ## Prerequisites {-}
 
 - This chapter requires the same packages used in Chapter \@ref(attr): 
@@ -103,7 +107,7 @@ If you're interested in the details, including other ways of subsetting, read on
 Another way of doing spatial subsetting uses objects returned by topological operators.
 These objects can be useful in their own right, for example when exploring the graph network of relationships between contiguous regions, but they can also be used for subsetting, as demonstrated in the code chunk below.
 
-```{r 04-spatial-operations-6}
+```{r 04-spatial-operations-6, out.lines=9}
 sel_sgbp = st_intersects(x = nz_height, y = canterbury)
 class(sel_sgbp)
 sel_sgbp
@@ -315,7 +319,7 @@ plot(l, add = TRUE)
 plot(p, add = TRUE)
 ```
 
-### DE-9IM strings
+### DE-9IM strings {#DE-9IM-strings}
 
 Underlying the binary predicates demonstrated in the previous section is the Dimensionally Extended 9-Intersection Model (DE-9IM).
 As the cryptic name suggests, this is not an easy topic.
