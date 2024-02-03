@@ -91,9 +91,9 @@ Aside from GeoPackage, there are other geospatial data exchange formats worth ch
 \index{COG}
 The GeoTIFF format seems to be the most prominent raster data format.
 It allows spatial information, such as CRS, to be embedded within a TIFF file. 
-Similar to ESRI Shapefile, this format was firstly developed in the 1990s, but as an open format.
+Similar to ESRI Shapefile, this format was first developed in the 1990s, but as an open format.
 Additionally, GeoTIFF is still being expanded and improved.
-One of the most significant recent addition to the GeoTIFF format is its variant called [COG](https://www.cogeo.org/) (*Cloud Optimized GeoTIFF*).
+One of the most significant recent additions to the GeoTIFF format is its variant called [COG](https://www.cogeo.org/) (*Cloud Optimized GeoTIFF*).
 Raster objects saved as COGs can be hosted on HTTP servers, so other people can read only parts of the file without downloading the whole file (see Sections \@ref(raster-data-read) and \@ref(raster-data-write)).
 
 There are many geographic file formats beyond those shown in Table \@ref(tab:formats) and new data formats capable of representing geographic are being developed.
@@ -111,7 +111,7 @@ However, this approach has downsides: it is challenging for storing geometries m
 Executing commands such as `sf::read_sf()` (the main function we use for loading vector data) or `terra::rast()` (the main function used for loading raster data) silently sets off a chain of events that reads data from files.
 Many R packages provide example datasets (e.g. the dataset `spData::world` that we used in earlier chapters) and functions to get geographic datasets from a range of data sources.
 All of them load the data into R or, more precisely, assign objects to your workspace.
-This means that when objects are imported into R they are stored in RAM^[There are some exceptions to this rule, e.g., **terra**'s `SpatRaster` objects (which are C++ pointers to the actual data) and objects that represent database connections that can be imported into memory with functions such as `dplyr::collect()`, as outlined in Section \@ref(postgis)], can be listed with the `ls()` (and should be viewable in 'Environment' panels in your development environement) and can be accessed from the [`.GlobalEnv`](http://adv-r.had.co.nz/Environments.html) of the R session.
+This means that when objects are imported into R they are stored in RAM^[There are some exceptions to this rule, e.g., **terra**'s `SpatRaster` objects (which are C++ pointers to the actual data) and objects that represent database connections that can be imported into memory with functions such as `dplyr::collect()`, as outlined in Section \@ref(postgis)], can be listed with `ls()` (and should be viewable in 'Environment' panels in your development environement) and can be accessed from the [`.GlobalEnv`](http://adv-r.had.co.nz/Environments.html) of the R session.
 
 ### Vector data {#iovec}
 
@@ -132,8 +132,8 @@ knitr::kable(head(sf_drivers, n = 6),
   kableExtra::column_spec(2, width = "7em")
 ```
 
-The following commands show the first three drivers reported the computer's GDAL installation (results can vary depending on the GDAL version installed) and a summary of the their features.
-Note that the majority of drivers can write data while only a dozen or so formats can efficiently represent raster data in addition to vector data (see `?st_drivers()` for details):
+The following commands show the first three drivers reported the computer's GDAL installation (results can vary depending on the GDAL version installed) and a summary of their features.
+Note that the majority of drivers can write data, while only a dozen or so formats can efficiently represent raster data in addition to vector data (see `?st_drivers()` for details):
 
 ```{r 07-read-write-plot-17, eval=FALSE}
 sf_drivers = st_drivers()
@@ -289,16 +289,18 @@ multilayer_rast = rast(multilayer_filepath)
 All of the previous examples read spatial information from files stored on your hard drive. 
 However, GDAL also allows reading data directly from online resources, such as HTTP/HTTPS/FTP web resources.
 The only thing we need to do is to add a `/vsicurl/` prefix before the path to the file.
-Let's try it by connecting to the global monthly snow probability at 500 m resolution for the period 2000-2012 [@hengl_t_2021_5774954].
+Let's try it by connecting to the global monthly snow probability at 500 m resolution for the period 2000-2012.
 Snow probability for December is stored as a Cloud Optimized GeoTIFF (COG) file (see Section \@ref(file-formats)) at [zenodo.org](https://zenodo.org/record/5774954/files/clm_snow.prob_esacci.dec_p.90_500m_s0..0cm_2000..2012_v2.0.tif).
 To read an online file, we just need to provide its URL together with the `/vsicurl/` prefix.
 
-```{r}
-myurl = "/vsicurl/https://zenodo.org/record/5774954/files/clm_snow.prob_esacci.dec_p.90_500m_s0..0cm_2000..2012_v2.0.tif"
+```{r, linewidth=80}
+myurl = paste0("/vsicurl/https://zenodo.org/record/5774954/files/",
+               "clm_snow.prob_esacci.dec_p.90_500m_s0..0cm_2000..2012_v2.0.tif")
 snow = rast(myurl)
 snow
 ```
 
+\index{COG} 
 Due to the fact that the input data is COG, we are actually not reading this file to our RAM, but rather creating a connection to it without obtaining any values.
 Its values will be read if we apply any value-based operation (e.g., `crop()` or `extract()`).
 This allows us also to just read a tiny portion of the data without downloading the entire file.
@@ -426,6 +428,7 @@ writeRaster(x = single_layer, filename = "my_raster.tif",
             gdal = c("COMPRESS=NONE"), overwrite = TRUE)
 ```
 
+\index{COG}
 Additionally, we can save our raster object as COG (*Cloud Optimized GeoTIFF*, Section \@ref(file-formats)) with the `filetype = "COG"` options.
 
 ```{r 07-read-write-plot-35b, eval=FALSE}
@@ -582,7 +585,7 @@ Geographic data can also be imported into R from various 'bridges' to geographic
 
 ## Geographic metadata
 
-Geographic metadata are a cornerstone of geographic information management, used to describe datasets, data structures and services. 
+Geographic metadata\index{geographic metadata} are a cornerstone of geographic information management, used to describe datasets, data structures and services. 
 They help make datasets FAIR (Findable, Accessible, Interoperable, Reusable) and are defined by the ISO/OGC standards, in particular the ISO 19115 standard and underlying schemas. 
 These standards are widely used within spatial data infrastructures, handled through metadata catalogs.
 
