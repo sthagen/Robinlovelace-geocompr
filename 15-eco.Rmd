@@ -17,7 +17,7 @@ library(terra)
 library(dplyr)
 library(data.table)        # fast data frame manipulation (used by mlr3)
 library(mlr3)              # machine learning (see Chapter 12)
-library(mlr3spatiotempcv)  # spatio-temporal resampling 
+library(mlr3spatiotempcv)  # spatiotemporal resampling 
 library(mlr3tuning)        # hyperparameter tuning package
 library(mlr3learners)      # interface to most important machine learning pkgs
 library(paradox)           # defining hyperparameter spaces
@@ -507,7 +507,7 @@ Calling the `train()`-method of the `AutoTuner`-object finally runs the hyperpar
 
 ```{r 15-eco-24, eval=FALSE, cache=TRUE, cache.lazy=FALSE}
 # hyperparameter tuning
-set.seed(08012024)
+set.seed(24092024)
 autotuner_rf$train(task)
 ```
 
