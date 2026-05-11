@@ -248,7 +248,7 @@ multilayer_rast = rast(multilayer_filepath)
 
 
 ## ---------------------------------------------------------------------------------------------------
-myurl = "/vsicurl/https://download.osgeo.org/geotiff/samples/usgs/o41078a5.tif"
+myurl = "/vsicurl/https://zenodo.org/record/5774954/files/clm_snow.prob_esacci.dec_p.90_500m_s0..0cm_2000..2012_v2.0.tif"
 snow = rast(myurl)
 snow
 
