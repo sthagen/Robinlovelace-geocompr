@@ -1,0 +1,16 @@
+name: Scheduled
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+jobs:
+  bookdown:
+    name: Render-Book
+    runs-on: ubuntu-latest
+    container: ghcr.io/geocompx/suggests:latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Render Book
+        run: Rscript -e 'bookdown::render_book("index.Rmd")'
