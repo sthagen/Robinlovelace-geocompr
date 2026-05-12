@@ -20,8 +20,6 @@ jobs:
         - name: Build book
           run: |
             Rscript -e 'install.packages("geocompkg", repos = c("https://geocompr.r-universe.dev", "https://cloud.r-project.org"), dependencies = TRUE, force = TRUE)'
-            Rscript -e 'if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak", repos = "https://cloud.r-project.org"); pak::pak("r-spatial/sf")'
-            Rscript -e 'if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak", repos = "https://cloud.r-project.org"); pak::pak("r-spatial/stars")'
-            Rscript -e 'if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak", repos = "https://cloud.r-project.org"); pak::pak("rspatial/terra")'
-            #Rscript -e 'remotes::install_github("geocompx/geocompkg", dependencies = TRUE, force = TRUE)'
+            Rscript -e 'if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak", repos = "https://cloud.r-project.org")'
+            Rscript -e 'pak::pak(c("r-spatial/sf", "r-spatial/stars", "rspatial/terra"))'
             Rscript -e 'bookdown::render_book("index.Rmd")'
