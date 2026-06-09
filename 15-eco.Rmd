@@ -122,86 +122,57 @@ The next step is to compute variables which are not only needed for the modeling
 Specifically, we compute catchment slope and catchment area\index{catchment area} from a digital elevation model\index{digital elevation model} using R-GIS bridges (see Chapter \@ref(gis)).
 Curvatures might also represent valuable predictors, and in the Exercise section you can find out how they would impact the modeling result.
 
-To compute catchment area\index{catchment area} and catchment slope, we can make use of the `sagang:sagawetnessindex` function.^[Admittedly, it is a bit unsatisfying that the only way of knowing that `sagawetnessindex` computes the desired terrain attributes is to be familiar with SAGA\index{SAGA}.]
-`qgis_show_help()` returns all function\index{function} parameters and default values of a specific geoalgorithm\index{geoalgorithm}.
-Here, we present only a selection of the complete output.
+To compute catchment area\index{catchment area} and catchment slope, we use the **Rsagacmd**\index{Rsagacmd (package)} package which calls SAGA GIS\index{SAGA} from R (see also Section \@ref(saga)).
+**Rsagacmd** auto-generates an R interface from the `saga_cmd` help, so each SAGA library appears as a list and each tool as a function on the `saga` object.
+Printing a tool returns its description and a tibble of all parameters (type, R argument name, SAGA identifier, default), which makes it easy to look up what is available.
 
 ```{r 15-eco-5, eval=FALSE}
-# if not already done, enable the saga next generation plugin
-qgisprocess::qgis_enable_plugins("processing_saga_nextgen")
-# show help
-qgisprocess::qgis_show_help("sagang:sagawetnessindex")
-#> Saga wetness index (sagang:sagawetnessindex)
-#> ...
-#> ----------------
-#> Arguments
-#> ----------------
+library(Rsagacmd)
+# initialize the link to SAGA; saga_cmd must be installed on the system
+saga = saga_gis()
+saga$ta_hydrology$saga_wetness_index
+#> Help for library = ta_hydrology; tool = saga_wetness_index:
+#> Author: J.Boehner, O.Conrad (c) 2001
+#> Description: The 'SAGA Wetness Index' is similar to the 'Topographic
+#> Wetness Index' (TWI) but uses a modified catchment area, predicting a
+#> more realistic, higher potential soil moisture in valley floors.
 #>
-#> DEM: Elevation
-#> 	Argument type:	raster
-#> 	Acceptable values:
-#> 		- Path to a raster layer
-#> ...
-#> SLOPE_TYPE: Type of Slope
-#> 	Argument type:	enum
-#> 	Available values:
-#> 		- 0: [0] local slope
-#> 		- 1: [1] catchment slope
-#> ...
-#> AREA: Catchment area
-#> 	Argument type:	rasterDestination
-#> 	Acceptable values:
-#> 		- Path for new raster layer
-#>...
-#> ----------------
-#> Outputs
-#> ----------------
-#>
-#> AREA: <outputRaster>
-#> 	Catchment area
-#> SLOPE: <outputRaster>
-#> 	Catchment slope
+#> # A tibble: 12 × 7
+#>    parameter        type  argument   identifier  default available_opts
+#>    <chr>            <chr> <chr>      <chr>         <dbl> <chr>
+#>  1 Elevation        grid  dem        DEM             NA  NA
+#>  2 Weights          grid  weight     WEIGHT          NA  NA
+#>  3 Catchment Area   grid  area       AREA            NA  NA
+#>  4 Catchment Slope  grid  slope      SLOPE           NA  NA
+#>  5 Modified Catchm… grid  area_mod   AREA_MOD        NA  NA
+#>  6 Topographic Wet… grid  twi        TWI             NA  NA
+#>  7 Suction          floa… suction    SUCTION         10  …
+#>  8 Type of Area     choi… area_type  AREA_TYPE        2  [0] total …
+#>  9 Type of Slope    choi… slope_type SLOPE_TYPE       1  [0] local …
 #> ...
 ```
 
-Subsequently, we can specify the needed parameters using R named arguments (see Section \@ref(rqgis)).
-Remember that we can use a path to a file on disk or a `SpatRaster` living in R's\index{R} global environment to specify the input raster `DEM` (see Section \@ref(rqgis)).
-Specifying 1 as the `SLOPE_TYPE` makes sure that the algorithm will return the catchment slope.
-The resulting rasters\index{raster} are saved to temporary files with an `.sdat` extension which is the native SAGA\index{SAGA} raster format.
+The `dem` argument is required (the digital elevation model).
+Setting `slope_type = 1` requests the catchment slope rather than the local slope (which is the SAGA default).
+The tool returns four rasters in a single call -- catchment area (`area`), catchment slope (`slope`), modified catchment area (`area_mod`), and a topographic wetness index variant (`twi`).
 
 ```{r 15-eco-6, eval=FALSE}
-# environmental predictors: catchment slope and catchment area
-ep = qgisprocess::qgis_run_algorithm(
-  alg = "sagang:sagawetnessindex",
-  DEM = dem,
-  SLOPE_TYPE = 1,
-  SLOPE = tempfile(fileext = ".sdat"),
-  AREA = tempfile(fileext = ".sdat"),
-  .quiet = TRUE)
+saga_twi = saga$ta_hydrology$saga_wetness_index(dem = dem, slope_type = 1)
 ```
 
-This returns a list named `ep` containing the paths to the computed output rasters.
-Let's read-in catchment area as well as catchment slope into a multi-layer `SpatRaster` object (see Section \@ref(raster-classes)).
-Additionally, we will add two more raster objects to it, namely `dem` and `ndvi`.
+`saga_twi` is a list of `SpatRaster` objects.
+We build the environmental predictor stack by combining catchment area and catchment slope with the previously loaded `dem` and `ndvi`, and we log-transform catchment area which is highly right-skewed (`hist(ep$carea)`).
 
 ```{r 15-eco-7, eval=FALSE}
-# read in catchment area and catchment slope
-ep = ep[c("AREA", "SLOPE")] |>
-  unlist() |>
-  rast()
-names(ep) = c("carea", "cslope") # assign better names
-origin(ep) = origin(dem) # make sure rasters have the same origin
-ep = c(dem, ndvi, ep) # add dem and ndvi to the multi-layer SpatRaster object
-```
-
-Additionally, the catchment area\index{catchment area} values are highly skewed to the right (`hist(ep$carea)`).
-A log10-transformation makes the distribution more normal.
-
-```{r 15-eco-8, eval=FALSE}
+ep = c(dem, ndvi, saga_twi$area, saga_twi$slope)
+names(ep) = c("dem", "ndvi", "carea", "cslope")
 ep$carea = log10(ep$carea)
 ```
 
-As a convenience to the reader, we have added `ep` to **spDataLarge**:
+For the small DEM used here, exchanging rasters between R and SAGA in memory is fine.
+For larger datasets, you can instead point **Rsagacmd** at file paths for inputs and outputs (e.g., `dem = "path/to/dem.tif"`, `area = "path/to/carea.tif"`), so the rasters never need to be loaded into R.
+
+As a convenience to the reader, the resulting `ep` is also available in **spDataLarge**:
 
 ```{r 15-eco-9, cache.lazy=FALSE}
 ep = rast(system.file("raster/ep.tif", package = "spDataLarge"))
